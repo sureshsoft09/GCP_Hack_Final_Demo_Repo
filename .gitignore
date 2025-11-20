@@ -20,12 +20,12 @@ env/
 .env.production
 
 # Google Cloud credentials
-*.json
-!**/requirements*.json
 service-account-key.json
 master-agent-key.json
 google-credentials.json
 gcp-key.json
+**/credentials*.json
+**/service-account*.json
 
 # Logs
 *.log
