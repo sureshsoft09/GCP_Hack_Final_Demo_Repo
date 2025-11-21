@@ -13,6 +13,7 @@ class UploadAndExtractService:
     
     def __init__(self):
         # Load environment variables
+        self.google_cloud_project = os.getenv("GOOGLE_CLOUD_PROJECT", "medassureaiproject")
         self.google_cloud_bucket = os.getenv("GOOGLE_CLOUD_BUCKET", "medassure-ai-documents")
         self.max_file_size = int(os.getenv("MAX_FILE_SIZE", "52428800"))  # 50MB default
         
@@ -43,10 +44,10 @@ class UploadAndExtractService:
         
         # Initialize Google Cloud Storage client
         try:
-            self.storage_client = storage.Client()
+            self.storage_client = storage.Client(project=self.google_cloud_project)
             self.bucket = self.storage_client.bucket(self.google_cloud_bucket)
             if self.debug:
-                print(f"Initialized Google Cloud Storage with bucket: {self.google_cloud_bucket}")
+                print(f"Initialized Google Cloud Storage with project: {self.google_cloud_project}, bucket: {self.google_cloud_bucket}")
         except Exception as e:
             if self.debug:
                 print(f"Warning: Could not initialize Google Cloud Storage: {e}")
@@ -163,6 +164,11 @@ class UploadAndExtractService:
                 
                 # Upload to cloud storage
                 destination_path = f"{project_name}_{project_id}/{file.filename}"
+                
+                if self.debug:
+                    print(f"Generated folder path for project: {project_name}_{project_id}")
+                    print(f"Project ID: {project_id}")
+                
                 upload_success = self.upload_file_to_cloud_storage(temp_file_path, destination_path)
                 
                 processed_files.append({

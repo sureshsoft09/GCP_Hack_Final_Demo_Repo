@@ -81,6 +81,9 @@ const api = {
   // Agent Session APIs
   resetAgentSession: () => apiInstance.post('/reset_agentsession'),
   
+  // Project Management APIs
+  generateProjectId: (data) => apiInstance.post('/api/generate-project-id', data),
+  
   // Generic API call method
   call: (method, endpoint, data = null, config = {}) => {
     return apiInstance[method.toLowerCase()](endpoint, data, config);

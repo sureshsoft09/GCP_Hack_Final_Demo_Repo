@@ -123,6 +123,20 @@ class ProjectHierarchy(BaseModel):
     total_test_cases: int = 0
     model_explanation: Optional[str] = None
 
+class ProjectCreationRequest(BaseModel):
+    project_name: str
+    description: Optional[str] = None
+    jira_project_key: str
+    notification_email: str
+
+class ProjectCreationResponse(BaseModel):
+    project_id: str
+    project_name: str
+    description: Optional[str] = None
+    jira_project_key: str
+    notification_email: str
+    created_at: str
+
 async def call_agents_api(prompt: str) -> AgentResponse:
     payload = {"query": prompt}
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
@@ -365,7 +379,7 @@ async def get_analytics_overview():
     """Get analytics overview for dashboard."""
     try:
         storage_stats = content_storage_service.get_storage_stats()
-        firestore_stats = await firestore_service.get_project_statistics()
+        firestore_stats = firestore_service.get_project_statistics()
         
         # Combine both storage and Firestore statistics
         return {
@@ -704,6 +718,76 @@ async def get_firestore_statistics():
 # ================================
 # ENHANCED FIRESTORE PROJECT ENDPOINTS
 # ================================
+
+@app.post("/api/generate-project-id", response_model=ProjectCreationResponse)
+async def generate_project_id(req: ProjectCreationRequest):
+    """Generate a unique project ID and create project metadata"""
+    import random
+    import string
+    
+    try:
+        # Get all existing projects to check for ID conflicts
+        existing_projects = firestore_service.get_all_projects()
+        existing_ids = {project.get('project_id', '') for project in existing_projects}
+        
+        # Generate unique project ID in format Pro_XXXXXXXX (8 digits)
+        max_attempts = 100
+        project_id = None
+        
+        for _ in range(max_attempts):
+            # Generate 8-digit alphanumeric code
+            random_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            candidate_id = f"Pro_{random_code}"
+            
+            if candidate_id not in existing_ids:
+                project_id = candidate_id
+                break
+        
+        if not project_id:
+            raise HTTPException(status_code=500, detail="Failed to generate unique project ID after multiple attempts")
+        
+        if DEBUG:
+            print(f"✅ Generated new project ID: {project_id}")
+            print(f"📁 Project Name: {req.project_name}")
+            print(f"🔑 Jira Key: {req.jira_project_key}")
+            print(f"📧 Notification Email: {req.notification_email}")
+        
+        # Create project metadata
+        project_metadata = {
+            "project_id": project_id,
+            "project_name": req.project_name,
+            "description": req.description or "",
+            "jira_project_key": req.jira_project_key,
+            "notification_email": req.notification_email,
+            "created_at": datetime.now().isoformat(),
+            "last_updated": datetime.now().isoformat(),
+            "status": "created",
+            "epics": []
+        }
+        
+        # Store initial project metadata in Firestore
+        created_project_id = firestore_service.create_project(project_metadata)
+        
+        if not created_project_id:
+            raise HTTPException(status_code=500, detail="Failed to create project in database")
+        
+        if DEBUG:
+            print(f"💾 Project stored in Firestore with ID: {created_project_id}")
+            print(f"🎉 Project creation completed successfully!")
+        
+        return ProjectCreationResponse(
+            project_id=project_id,
+            project_name=req.project_name,
+            description=req.description,
+            jira_project_key=req.jira_project_key,
+            notification_email=req.notification_email,
+            created_at=project_metadata["created_at"]
+        )
+        
+    except Exception as e:
+        if DEBUG:
+            print(f"Error generating project ID: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate project ID: {str(e)}")
 
 @app.get("/api/projects")
 async def get_all_projects():

@@ -110,7 +110,8 @@ class FirestoreService:
             raise Exception("Firestore service not available")
 
         try:
-            project_id = self._generate_id("PROJ_")
+            # Use provided project_id if available, otherwise generate one
+            project_id = project_data.get('project_id') or self._generate_id("PROJ_")
             
             # Prepare project data
             project = {
@@ -123,6 +124,7 @@ class FirestoreService:
                 'coverage_summary': None,
                 'jira_project_key': project_data.get('jira_project_key'),
                 'jira_project_url': None,
+                'notification_email': project_data.get('notification_email'),
                 'created_by': created_by,
                 'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow()

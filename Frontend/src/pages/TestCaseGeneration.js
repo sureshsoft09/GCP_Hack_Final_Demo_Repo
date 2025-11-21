@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -70,16 +71,22 @@ import {
 } from '@mui/icons-material';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
 import ExportService from '../services/exportService';
+import { useNotification } from '../contexts/NotificationContext';
 
 const TestCaseGeneration = () => {
   // Refs
   const chatMessagesRef = useRef(null);
+  
+  // Hooks
+  const { showNotification } = useNotification();
 
   // State management
   const [activeStep, setActiveStep] = useState(0);
   const [projectData, setProjectData] = useState({
     name: '',
     description: '',
+    jiraProjectKey: 'HS25SKL',
+    notificationEmail: '',
     created: null,
     id: null
   });
@@ -98,7 +105,6 @@ const TestCaseGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [testGenerationStats, setTestGenerationStats] = useState(null);
   const [exportFormat, setExportFormat] = useState('pdf');
-  const [notification, setNotification] = useState({ open: false, message: '', type: 'info' });
   const [completionDialog, setCompletionDialog] = useState(false);
   const [isChatProcessing, setIsChatProcessing] = useState(false);
 
@@ -113,6 +119,7 @@ const TestCaseGeneration = () => {
   // Dialog states
   const [newProjectDialog, setNewProjectDialog] = useState(false);
   const [exportDialog, setExportDialog] = useState(false);
+  const [creatingProject, setCreatingProject] = useState(false);
 
   // Auto-scroll to bottom when chat messages change
   useEffect(() => {
@@ -144,14 +151,6 @@ const TestCaseGeneration = () => {
   // Navigation hook
   const navigate = useNavigate();
 
-  // Notification helper
-  const showNotification = (message, type = 'info') => {
-    setNotification({ open: true, message, type });
-    setTimeout(() => {
-      setNotification({ open: false, message: '', type: 'info' });
-    }, 5000);
-  };
-
   // Completion dialog handler
   const handleCompletionDialogClose = () => {
     setCompletionDialog(false);
@@ -164,23 +163,72 @@ const TestCaseGeneration = () => {
     navigate('/dashboard');
   };
 
+  // Handle opening new project dialog and reset form
+  const handleOpenNewProjectDialog = () => {
+    setProjectData({
+      name: '',
+      description: '',
+      jiraProjectKey: 'HS25SKL',
+      notificationEmail: '',
+      created: null,
+      id: null
+    });
+    setNewProjectDialog(true);
+  };
+
   // Step 1: Create New Project
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     if (!projectData.name.trim()) {
       showNotification('Please enter a project name', 'error');
       return;
     }
+
+    if (!projectData.jiraProjectKey.trim()) {
+      showNotification('Please enter a Jira Project Key', 'error');
+      return;
+    }
+
+    if (!projectData.notificationEmail.trim()) {
+      showNotification('Please enter a notification email address', 'error');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(projectData.notificationEmail)) {
+      showNotification('Please enter a valid email address', 'error');
+      return;
+    }
     
-    const projectId = `proj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    setProjectData({
-      ...projectData,
-      created: new Date(),
-      id: projectId
-    });
-    setNewProjectDialog(false);
-    setActiveStep(1);
-    showNotification('Project created successfully!', 'success');
+    try {
+      setCreatingProject(true);
+      
+      // Call backend API to generate unique project ID
+      const response = await api.generateProjectId({
+        project_name: projectData.name,
+        description: projectData.description,
+        jira_project_key: projectData.jiraProjectKey,
+        notification_email: projectData.notificationEmail
+      });
+      
+      const { project_id } = response.data;
+      
+      setProjectData({
+        ...projectData,
+        created: new Date(),
+        id: project_id
+      });
+      setNewProjectDialog(false);
+      setActiveStep(1);
+      showNotification(`Project created successfully with ID: ${project_id}`, 'success');
+      
+    } catch (error) {
+      console.error('Error creating project:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Unknown error occurred';
+      showNotification(`Failed to create project: ${errorMessage}`, 'error');
+    } finally {
+      setCreatingProject(false);
+    }
   };
 
   // Step 2: File Selection and Upload
@@ -925,16 +973,7 @@ const TestCaseGeneration = () => {
         </Typography>
       </Box>
 
-      {/* Notification */}
-      {notification.open && (
-        <Alert 
-          severity={notification.type} 
-          sx={{ mb: 3 }}
-          onClose={() => setNotification({ ...notification, open: false })}
-        >
-          {notification.message}
-        </Alert>
-      )}
+
 
       {/* Main Stepper */}
       <Paper sx={{ p: 3 }}>
@@ -960,7 +999,7 @@ const TestCaseGeneration = () => {
                           <Button
                             variant="contained"
                             startIcon={<AddIcon />}
-                            onClick={() => setNewProjectDialog(true)}
+                            onClick={handleOpenNewProjectDialog}
                           >
                             Create New Project
                           </Button>
@@ -1561,6 +1600,7 @@ const TestCaseGeneration = () => {
             value={projectData.name}
             onChange={(e) => setProjectData({ ...projectData, name: e.target.value })}
             sx={{ mb: 2 }}
+            required
           />
           <TextField
             margin="dense"
@@ -1571,11 +1611,41 @@ const TestCaseGeneration = () => {
             variant="outlined"
             value={projectData.description}
             onChange={(e) => setProjectData({ ...projectData, description: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Jira Project Key"
+            fullWidth
+            variant="outlined"
+            value={projectData.jiraProjectKey}
+            onChange={(e) => setProjectData({ ...projectData, jiraProjectKey: e.target.value })}
+            sx={{ mb: 2 }}
+            required
+            helperText="e.g., PROJ, TEST, DEV"
+          />
+          <TextField
+            margin="dense"
+            label="Notification Email"
+            fullWidth
+            variant="outlined"
+            type="email"
+            value={projectData.notificationEmail}
+            onChange={(e) => setProjectData({ ...projectData, notificationEmail: e.target.value })}
+            required
+            helperText="Email address for project notifications"
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setNewProjectDialog(false)}>Cancel</Button>
-          <Button onClick={handleCreateProject} variant="contained">Create</Button>
+          <Button onClick={() => setNewProjectDialog(false)} disabled={creatingProject}>Cancel</Button>
+          <Button 
+            onClick={handleCreateProject} 
+            variant="contained" 
+            disabled={creatingProject}
+            startIcon={creatingProject ? <CircularProgress size={16} /> : null}
+          >
+            {creatingProject ? 'Creating...' : 'Create'}
+          </Button>
         </DialogActions>
       </Dialog>
 
