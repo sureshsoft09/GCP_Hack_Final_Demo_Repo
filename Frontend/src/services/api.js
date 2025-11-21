@@ -66,6 +66,7 @@ const api = {
   
   // Enhancement APIs
   enhanceTestCases: (data) => apiInstance.post('/enhance_test_cases', data),
+  enhanceTestCasesChat: (data) => apiInstance.post('/enhance_test_cases_chat', data),
   
   // Migration APIs
   migrateTestCases: (formData) => apiInstance.post('/migrate_test_cases', formData, {
@@ -76,6 +77,9 @@ const api = {
   
   // Analytics APIs
   getAnalyticsSummary: () => apiInstance.get('/analytics_summary'),
+  
+  // Agent Session APIs
+  resetAgentSession: () => apiInstance.post('/reset_agentsession'),
   
   // Generic API call method
   call: (method, endpoint, data = null, config = {}) => {

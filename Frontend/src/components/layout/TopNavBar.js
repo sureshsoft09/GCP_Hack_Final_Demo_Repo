@@ -10,6 +10,7 @@ import {
   Button,
   Tooltip,
 } from '@mui/material';
+import api from '../../services/api';
 import {
   Dashboard as DashboardIcon,
   AutoAwesome as GenerateIcon,
@@ -53,7 +54,22 @@ const TopNavBar = () => {
   const location = useLocation();
 
   const handleNavigation = (path) => {
+    // Don't navigate if already on the same path
+    if (location.pathname === path) {
+      return;
+    }
+
+    // Navigate immediately
     navigate(path);
+    
+    // Reset agent session in background
+    api.resetAgentSession()
+      .then(() => {
+        console.log('Agent session reset successfully');
+      })
+      .catch((error) => {
+        console.error('Failed to reset agent session:', error);
+      });
   };
 
   const isActivePath = (path) => {

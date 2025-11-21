@@ -265,18 +265,36 @@ async def generate_test_cases(req: PromptRequest):
     return response_FirestoreJira_status
 
 
-@app.post("/enhance_test_cases", response_model=AgentResponse)
-async def enhance_test_cases(req: PromptRequest):
+@app.post("/enhance_test_cases_chat", response_model=AgentResponse)
+async def enhance_test_cases_chat(req: PromptRequest):
     """Enhance existing test cases."""
-    prompt = f"Enhance these test cases: {req.prompt}"
-    return await call_agents_api(prompt)
+
+    print(f"DEBUG: Starting enhance_test_cases_chat() - User Prompt - {req.prompt}")
+
+    prompt = f"""
+        This is a clarification for any specific use case or test case request from the user.
+        The user has provided additional information or clarifications for the test cases/ use cases previously generated.
+        master_agent should forward it to the enhance_testcase_agent not to any other tools. 
+        
+        Context:
+        - Type: Enhance Clarification Interaction
+        - Intent: Provide clarification, or confirm requirements as complete to change/ enhance existing test case/ use case and store it into Firestore and Jira.
+        - User message: {req.prompt}    
+        """
+    response = await call_agents_api(prompt)
+    print("DEBUG: Received response from agent")
+    print(f"Response: {response}")
+
+    return response
 
 
 @app.post("/migration_test_cases", response_model=AgentResponse)
 async def migration_test_cases(req: PromptRequest):
     """Produce migration-specific test cases or guidance."""
     prompt = f"Generate migration test cases for: {req.prompt}"
-    return await call_agents_api(prompt)
+    response = await call_agents_api(prompt)
+    
+    return response
 
 
 @app.post("/requirement_clarification_chat", response_model=AgentResponse)
@@ -299,6 +317,20 @@ async def req_clarification_chat_with_agent(req: PromptRequest):
     
     """
     return await call_agents_api(prompt)
+
+@app.post("/reset_agentsession")
+async def reset_agent_session_endpoint():
+    """Reset the agent session to start fresh."""
+    try:
+        success = await reset_agent_session()
+        if success:
+            return {"message": "Agent session reset successfully", "success": True}
+        else:
+            return {"message": "Failed to reset agent session", "success": False}
+    except Exception as e:
+        if DEBUG:
+            print(f"Error in reset_agentsession endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Error resetting agent session: {str(e)}")
 
 ##Firestore Integration Endpoints
 

@@ -51,6 +51,7 @@ const EnhanceTestCase = () => {
   const [projectHierarchy, setProjectHierarchy] = useState(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [projectClarificationStatus, setProjectClarificationStatus] = useState({});
   const [expandedEpics, setExpandedEpics] = useState({});
   const [expandedFeatures, setExpandedFeatures] = useState({});
   const [expandedUseCases, setExpandedUseCases] = useState({});
@@ -78,7 +79,16 @@ const EnhanceTestCase = () => {
     try {
       setLoading(true);
       const response = await api.get('/api/projects');
-      setProjects(response.data.projects || []);
+      const projectsList = response.data.projects || [];
+      setProjects(projectsList);
+      
+      // Check clarification status for each project
+      const clarificationStatuses = {};
+      for (const project of projectsList) {
+        clarificationStatuses[project.project_id] = await checkProjectClarificationStatus(project.project_id);
+      }
+      setProjectClarificationStatus(clarificationStatuses);
+      
     } catch (error) {
       console.error('Error loading projects:', error);
       showNotification('Failed to load projects', 'error');
@@ -112,25 +122,32 @@ const EnhanceTestCase = () => {
     }
   };
 
-  const handleRefactor = (artifact, type) => {
-    setCurrentArtifact({ ...artifact, type });
+  const handleRefactor = (artifact, type, context = {}) => {
+    const enhancedArtifact = { ...artifact, type, ...context };
+    setCurrentArtifact(enhancedArtifact);
     
     // Prefill context message
     const contextMessage = {
       role: 'system',
       content: `Analyzing ${type}: ${artifact.use_case_title || artifact.test_case_title || artifact.title}
       
-ID: ${artifact.use_case_id || artifact.test_case_id}
+Project: ${projectHierarchy?.project_name || 'Unknown'}
+Project ID: ${selectedProject}
+${context.epic_id ? `Epic ID: ${context.epic_id}` : ''}
+${context.feature_id ? `Feature ID: ${context.feature_id}` : ''}
+Artifact ID: ${artifact.use_case_id || artifact.test_case_id}
 Current Review Status: ${artifact.review_status || 'Pending'}
 Comments: ${artifact.comments || 'No comments available'}
 
 ${type === 'use_case' ? 
   `Description: ${artifact.description || 'No description'}
-  Acceptance Criteria: ${Array.isArray(artifact.acceptance_criteria) ? artifact.acceptance_criteria.join(', ') : artifact.acceptance_criteria || 'None'}` :
+  Acceptance Criteria: ${Array.isArray(artifact.acceptance_criteria) ? artifact.acceptance_criteria.join(', ') : artifact.acceptance_criteria || 'None'}
+  Model Explanation: ${artifact.model_explanation || 'No explanation available'}` :
   `Test Type: ${artifact.test_type || 'Functional'}
   Preconditions: ${Array.isArray(artifact.preconditions) ? artifact.preconditions.join(', ') : artifact.preconditions || 'None'}
   Test Steps: ${Array.isArray(artifact.test_steps) ? artifact.test_steps.join(', ') : artifact.test_steps || 'None'}
-  Expected Result: ${artifact.expected_result || 'None'}`}
+  Expected Result: ${artifact.expected_result || 'None'}
+  Model Explanation: ${artifact.model_explanation || 'No explanation available'}`}
 
 Please provide enhancement suggestions or ask clarifying questions.`
     };
@@ -149,43 +166,89 @@ Please provide enhancement suggestions or ask clarifying questions.`
     setSendingMessage(true);
 
     try {
-      const payload = {
+      // Create comprehensive prompt with all context
+      const artifactType = currentArtifact.type;
+      const artifactDetails = {
         project_id: selectedProject,
-        artifact_type: currentArtifact.type,
-        artifact_id: currentArtifact.use_case_id || currentArtifact.test_case_id,
-        artifact_details: currentArtifact,
-        user_chat_history: updatedHistory.filter(msg => msg.role === 'user').map(msg => msg.content)
+        project_name: projectHierarchy?.project_name || 'Unknown',
+        epic_id: currentArtifact.epic_id || null,
+        feature_id: currentArtifact.feature_id || null,
+        use_case_id: artifactType === 'use_case' ? currentArtifact.use_case_id : null,
+        test_case_id: artifactType === 'test_case' ? currentArtifact.test_case_id : null,
+        artifact_type: artifactType,
+        title: currentArtifact.use_case_title || currentArtifact.test_case_title || currentArtifact.title,
+        description: currentArtifact.description || '',
+        review_status: currentArtifact.review_status || 'Pending',
+        model_explanation: currentArtifact.model_explanation || '',
+        ...(artifactType === 'use_case' ? {
+          acceptance_criteria: currentArtifact.acceptance_criteria || []
+        } : {
+          test_type: currentArtifact.test_type || 'Functional',
+          preconditions: currentArtifact.preconditions || [],
+          test_steps: currentArtifact.test_steps || [],
+          expected_result: currentArtifact.expected_result || '',
+          test_data: currentArtifact.test_data || null,
+          priority: currentArtifact.priority || 'Medium',
+          tags: currentArtifact.tags || []
+        })
       };
 
-      const response = await api.post('/api/enhance_testcase_agent', payload);
+      const contextualPrompt = `
+Project Context:
+- Project ID: ${selectedProject}
+- Project Name: ${projectHierarchy?.project_name || 'Unknown'}
+${currentArtifact.epic_id ? `- Epic ID: ${currentArtifact.epic_id}` : ''}
+${currentArtifact.feature_id ? `- Feature ID: ${currentArtifact.feature_id}` : ''}
+
+Artifact Details:
+${JSON.stringify(artifactDetails, null, 2)}
+
+User Input: ${userMessage}
+
+Previous Context: ${chatHistory.filter(msg => msg.role === 'system').map(msg => msg.content).join('\n')}
+
+Please analyze the existing ${artifactType} and either ask clarifying questions or provide enhancement suggestions based on the user input.`;
+
+      const payload = {
+        prompt: contextualPrompt
+      };
+
+      const response = await api.enhanceTestCasesChat(payload);
       const agentResponse = response.data;
       
       setAgentStatus(agentResponse);
       
       const assistantMessage = {
         role: 'assistant',
-        content: Array.isArray(agentResponse.assistant_response) 
-          ? agentResponse.assistant_response.join('\n') 
-          : agentResponse.assistant_response
+        content: agentResponse.response || 'No response received from agent'
       };
       
       setChatHistory(prev => [...prev, assistantMessage]);
       
-      // If clarifications are completed and enhancement is ready
-      if (agentResponse.status === 'clarifications_completed') {
-        showNotification('Enhancement completed! Please refresh to see updates.', 'success');
-        // Optionally refresh the hierarchy
-        setTimeout(() => {
-          analyzeTestCases();
-        }, 2000);
+      // Check if the response indicates completion or success
+      if (agentResponse.response && (
+        agentResponse.response.toLowerCase().includes('completed') ||
+        agentResponse.response.toLowerCase().includes('updated') ||
+        agentResponse.response.toLowerCase().includes('enhanced')
+      )) {
+        showNotification('Enhancement request processed! Check the response for details.', 'success');
       }
       
     } catch (error) {
       console.error('Error sending message:', error);
-      showNotification('Failed to send message to AI assistant', 'error');
+      console.error('Error details:', error.response?.data || error.message);
+      
+      let errorDetails = 'Unknown error occurred';
+      if (error.response?.data?.detail) {
+        errorDetails = error.response.data.detail;
+      } else if (error.message) {
+        errorDetails = error.message;
+      }
+      
+      showNotification(`Failed to send message: ${errorDetails}`, 'error');
       const errorMessage = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
+        content: `Sorry, I encountered an error: ${errorDetails}. Please try again.`
       };
       setChatHistory(prev => [...prev, errorMessage]);
     } finally {
@@ -232,6 +295,22 @@ Please provide enhancement suggestions or ask clarifying questions.`
     return features.some(f => hasUseCasesNeedingClarification(f));
   };
 
+  const hasProjectClarificationNeeds = (projectHierarchy) => {
+    if (!projectHierarchy || !projectHierarchy.epics) return false;
+    return projectHierarchy.epics.some(epic => hasFeaturesNeedingClarification(epic));
+  };
+
+  const checkProjectClarificationStatus = async (projectId) => {
+    try {
+      const response = await api.get(`/api/projects/${projectId}/hierarchy`);
+      const hierarchy = response.data.hierarchy;
+      return hasProjectClarificationNeeds(hierarchy);
+    } catch (error) {
+      console.error(`Error checking clarification status for project ${projectId}:`, error);
+      return false;
+    }
+  };
+
   // InfoButton component for model explanations
   const InfoButton = ({ onClick, hasInfo, tooltip }) => (
     <Tooltip title={tooltip}>
@@ -268,7 +347,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
     }
   };
 
-  const TestCaseItem = ({ testCase }) => (
+  const TestCaseItem = ({ testCase, epic, feature, useCase }) => (
     <ListItem
       sx={{
         border: '1px solid #e0e0e0',
@@ -311,7 +390,11 @@ Please provide enhancement suggestions or ask clarifying questions.`
                     size="small"
                     variant="outlined"
                     startIcon={<RefactorIcon />}
-                    onClick={() => handleRefactor(testCase, 'test_case')}
+                    onClick={() => handleRefactor(testCase, 'test_case', { 
+                      epic_id: epic?.epic_id, 
+                      feature_id: feature?.feature_id,
+                      use_case_id: useCase?.use_case_id
+                    })}
                     sx={{ color: '#667eea', borderColor: '#667eea' }}
                   >
                     Refactor
@@ -387,7 +470,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
     </ListItem>
   );
 
-  const UseCaseItem = ({ useCase }) => {
+  const UseCaseItem = ({ useCase, epic, feature }) => {
     const isExpanded = expandedUseCases[useCase.use_case_id];
     const testCases = useCase.test_cases || [];
 
@@ -433,7 +516,10 @@ Please provide enhancement suggestions or ask clarifying questions.`
                         startIcon={<RefactorIcon />}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleRefactor(useCase, 'use_case');
+                          handleRefactor(useCase, 'use_case', {
+                            epic_id: epic?.epic_id,
+                            feature_id: feature?.feature_id
+                          });
                         }}
                         sx={{ color: '#667eea', borderColor: '#667eea' }}
                       >
@@ -481,7 +567,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
             </Typography>
             {testCases.length > 0 ? (
               testCases.map((testCase) => (
-                <TestCaseItem key={testCase.test_case_id} testCase={testCase} />
+                <TestCaseItem key={testCase.test_case_id} testCase={testCase} epic={epic} feature={feature} useCase={useCase} />
               ))
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
@@ -494,7 +580,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
     );
   };
 
-  const FeatureItem = ({ feature }) => {
+  const FeatureItem = ({ feature, epic }) => {
     const isExpanded = expandedFeatures[feature.feature_id];
     const useCases = feature.use_cases || [];
 
@@ -537,7 +623,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
             </Typography>
             {useCases.length > 0 ? (
               useCases.map((useCase) => (
-                <UseCaseItem key={useCase.use_case_id} useCase={useCase} />
+                <UseCaseItem key={useCase.use_case_id} useCase={useCase} epic={epic} feature={feature} />
               ))
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
@@ -593,7 +679,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
             </Typography>
             {features.length > 0 ? (
               features.map((feature) => (
-                <FeatureItem key={feature.feature_id} feature={feature} />
+                <FeatureItem key={feature.feature_id} feature={feature} epic={epic} />
               ))
             ) : (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
@@ -641,7 +727,22 @@ Please provide enhancement suggestions or ask clarifying questions.`
               >
                 {projects.map((project) => (
                   <MenuItem key={project.project_id} value={project.project_id}>
-                    {project.project_name} ({project.project_id})
+                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <Typography sx={{ flexGrow: 1 }}>
+                        {project.project_name} ({project.project_id})
+                      </Typography>
+                      {projectClarificationStatus[project.project_id] && (
+                        <Tooltip title="Contains items needing clarification">
+                          <WarningIcon 
+                            sx={{ 
+                              color: '#ff9800', 
+                              fontSize: '1.2rem',
+                              ml: 1
+                            }} 
+                          />
+                        </Tooltip>
+                      )}
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>
