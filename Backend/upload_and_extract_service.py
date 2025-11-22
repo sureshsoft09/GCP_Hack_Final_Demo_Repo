@@ -13,8 +13,8 @@ class UploadAndExtractService:
     
     def __init__(self):
         # Load environment variables
-        self.google_cloud_project = os.getenv("GOOGLE_CLOUD_PROJECT", "medassureaiproject")
-        self.google_cloud_bucket = os.getenv("GOOGLE_CLOUD_BUCKET", "medassure-ai-documents")
+        self.google_cloud_project = os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0182599221")
+        self.google_cloud_bucket = os.getenv("GOOGLE_CLOUD_BUCKET", "medassure-ai-documents1")
         self.max_file_size = int(os.getenv("MAX_FILE_SIZE", "52428800"))  # 50MB default
         
         # Handle both MIME types and simplified extensions

@@ -33,7 +33,7 @@ class FirestoreClient:
     def __init__(self):
         """Initialize Firestore client"""
         self.client = firestore.Client(
-            project=os.getenv("GOOGLE_CLOUD_PROJECT", "medassureaiproject"),
+            project=os.getenv("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0182599221"),
             database=os.getenv("FIRESTORE_DATABASE_Name", "medassureaifirestoredb")
         )
         self.projects_collection = os.getenv("PROJECTS_COLLECTION", "testcase_projects")

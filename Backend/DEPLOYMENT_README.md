@@ -5,8 +5,8 @@ This guide covers deploying the MedAssure AI Backend service to Google Cloud Run
 ## Prerequisites
 
 1. **Google Cloud CLI**: Ensure `gcloud` is installed and authenticated
-2. **Google Cloud Project**: Project ID `medassureaiproject`
-3. **Service Account**: `firestoreconnectserviceacc@medassureaiproject.iam.gserviceaccount.com`
+2. **Google Cloud Project**: Project ID `gen-lang-client-0182599221`
+3. **Service Account**: `firestoreconnectserviceacc@gen-lang-client-0182599221.iam.gserviceaccount.com`
 4. **Dependencies**: Agents service and MCP servers must be deployed first
 
 ## Deployment Options
@@ -25,7 +25,7 @@ chmod +x deploy.sh
 ### Option 3: Manual gcloud Command
 ```bash
 gcloud run deploy medassure-backend \
-    --service-account=firestoreconnectserviceacc@medassureaiproject.iam.gserviceaccount.com \
+    --service-account=firestoreconnectserviceacc@gen-lang-client-0182599221.iam.gserviceaccount.com \
     --allow-unauthenticated \
     --region=europe-west1 \
     --source=. \
@@ -36,7 +36,7 @@ gcloud run deploy medassure-backend \
     --min-instances=0 \
     --timeout=600 \
     --concurrency=80 \
-    --project=medassureaiproject
+    --project=gen-lang-client-0182599221
 ```
 
 ## Environment Variables
@@ -49,10 +49,10 @@ The following environment variables are configured automatically:
 - `AGENTS_API_TIMEOUT`: 600
 
 ### Google Cloud Storage
-- `GOOGLE_CLOUD_BUCKET`: medassure-ai-documents
+- `GOOGLE_CLOUD_BUCKET`: medassure-ai-documents1
 
 ### Firestore Configuration
-- `FIRESTORE_PROJECT_ID`: medassureaiproject
+- `FIRESTORE_PROJECT_ID`: gen-lang-client-0182599221
 - `FIRESTORE_DATABASE_NAME`: medassureaifirestoredb
 - `FIRESTORE_PROJECTS_COLLECTION`: testcase_projects
 
@@ -120,16 +120,16 @@ After deployment, test the service:
 
 ```bash
 # Get service details
-gcloud run services describe medassure-backend --region=europe-west1 --project=medassureaiproject
+gcloud run services describe medassure-backend --region=europe-west1 --project=gen-lang-client-0182599221
 
 # Test health endpoint
-curl https://medassure-backend-europe-west1-medassureaiproject.a.run.app/
+curl https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app/
 
 # Test detailed health check
-curl https://medassure-backend-europe-west1-medassureaiproject.a.run.app/health
+curl https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app/health
 
 # Test generate endpoint
-curl -X POST "https://medassure-backend-europe-west1-medassureaiproject.a.run.app/generate" \
+curl -X POST "https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app/generate" \
   -H "Content-Type: application/json" \
   -d '{"prompt": "Test query", "metadata": {}}'
 ```
@@ -201,5 +201,5 @@ gcloud run services update medassure-backend \
 
 After deployment, update your Frontend configuration to use:
 ```
-BACKEND_URL=https://medassure-backend-europe-west1-medassureaiproject.a.run.app
+BACKEND_URL=https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app
 ```

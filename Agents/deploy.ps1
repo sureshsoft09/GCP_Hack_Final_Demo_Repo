@@ -1,7 +1,7 @@
 # Agents Cloud Run Deployment Script (PowerShell)
 
 # Configuration
-$GOOGLE_CLOUD_PROJECT = "medassureaiproject"
+$GOOGLE_CLOUD_PROJECT = "gen-lang-client-0182599221"
 $REGION = "europe-west1"
 $SERVICE_NAME = "agents-server"
 $SERVICE_ACCOUNT = "master-agent-sa@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com"
@@ -39,6 +39,7 @@ gcloud run deploy $SERVICE_NAME `
     --min-instances=0 `
     --timeout=600 `
     --concurrency=80 `
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=medassureaiproject,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=True,FIRESTORE_MCP_URL=https://firestore-mcp-server-518624836175.europe-west1.run.app/mcp,JIRA_MCP_URL=https://jira-mcp-server-518624836175.europe-west1.run.app/mcp" `
+    --set-env-vars="GOOGLE_CLOUD_PROJECT=gen-lang-client-0182599221,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=True,FIRESTORE_MCP_URL=https://firestore-mcp-server-145534422719.europe-west1.run.app/mcp,JIRA_MCP_URL=https://jira-mcp-server-145534422719.europe-west1.run.app/mcp" `
     --project=$GOOGLE_CLOUD_PROJECT
+
 

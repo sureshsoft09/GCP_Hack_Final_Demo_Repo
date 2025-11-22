@@ -12,7 +12,7 @@ This guide covers deploying the MedAssure AI Frontend to Firebase Hosting.
 ## Project Setup
 
 The project is already configured for Firebase Hosting with:
-- **Project ID**: `medassureaiproject`
+- **Project ID**: `gen-lang-client-0182599221`
 - **Build Directory**: `build` (React production build)
 - **SPA Configuration**: Rewrites all routes to `/index.html`
 
@@ -20,14 +20,14 @@ The project is already configured for Firebase Hosting with:
 
 ### Production Environment (`.env.production`)
 ```bash
-REACT_APP_API_BASE_URL=https://medassure-backend-europe-west1-medassureaiproject.a.run.app
+REACT_APP_API_BASE_URL=https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app
 GENERATE_SOURCEMAP=false
 ```
 
 ### Local Development (`.env.local`)
 ```bash
 # Using production backend
-REACT_APP_API_BASE_URL=https://medassure-backend-europe-west1-medassureaiproject.a.run.app
+REACT_APP_API_BASE_URL=https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app
 
 # OR for local backend development:
 # REACT_APP_API_BASE_URL=http://localhost:8083
@@ -66,7 +66,7 @@ firebase deploy --only hosting
 
 **Important**: Always run `npm run build` before deployment to ensure the latest code changes are included.
 # Set Firebase project
-firebase use medassureaiproject
+firebase use gen-lang-client-0182599221
 
 # Install dependencies
 npm install
@@ -81,7 +81,7 @@ firebase deploy --only hosting
 ## Build Process
 
 The deployment script will:
-1. Set the Firebase project to `medassureaiproject`
+1. Set the Firebase project to `gen-lang-client-0182599221`
 2. Install npm dependencies (if needed)
 3. Build the React app for production
 4. Deploy the `build` folder to Firebase Hosting
@@ -104,7 +104,7 @@ The deployment script will:
 ```json
 {
   "projects": {
-    "default": "medassureaiproject"
+    "default": "gen-lang-client-0182599221"
   }
 }
 ```
@@ -112,8 +112,8 @@ The deployment script will:
 ## Deployment URLs
 
 After successful deployment, your app will be available at:
-- **Primary URL**: https://medassureaiproject.web.app
-- **Alternative URL**: https://medassureaiproject.firebaseapp.com
+- **Primary URL**: https://gen-lang-client-0182599221.web.app
+- **Alternative URL**: https://gen-lang-client-0182599221.firebaseapp.com
 
 ## Environment Variables
 
@@ -126,14 +126,14 @@ The frontend uses the following environment variables:
 ### API Configuration
 The frontend is configured to connect to:
 ```
-Backend: https://medassure-backend-europe-west1-medassureaiproject.a.run.app
+Backend: https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app
 ```
 
 ## Testing the Deployment
 
 After deployment, test the application:
 
-1. **Open the app**: Visit https://medassureaiproject.web.app
+1. **Open the app**: Visit https://gen-lang-client-0182599221.web.app
 2. **Check console**: Open browser dev tools, verify no API errors
 3. **Test features**: Upload files, generate content, navigate pages
 4. **API connectivity**: Verify frontend connects to Cloud Run backend
@@ -172,7 +172,7 @@ After deployment, test the application:
 2. **API Connection Issues**
    ```bash
    # Verify backend is deployed and accessible
-   curl https://medassure-backend-europe-west1-medassureaiproject.a.run.app/health
+   curl https://medassure-backend-europe-west1-gen-lang-client-0182599221.a.run.app/health
    
    # Check environment variables
    cat .env.production
@@ -227,7 +227,7 @@ firebase deploy --only hosting:production
 firebase hosting:clone:list
 
 # Check deployment history
-firebase hosting:sites:get medassureaiproject
+firebase hosting:sites:get gen-lang-client-0182599221
 ```
 
 ### Performance Monitoring

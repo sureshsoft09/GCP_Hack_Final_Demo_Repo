@@ -3,7 +3,7 @@
 Write-Host "Deploying MedAssure AI Frontend to Firebase Hosting..." -ForegroundColor Green
 
 # Configuration
-$PROJECT_ID = "medassureaiproject"
+$PROJECT_ID = "gen-lang-client-0182599221"
 
 # Set the Firebase project
 Write-Host "Setting Firebase project..." -ForegroundColor Yellow
@@ -32,3 +32,4 @@ firebase deploy --only hosting
 Write-Host "Deployment completed!" -ForegroundColor Green
 Write-Host "Your app is now live at: https://$PROJECT_ID.web.app" -ForegroundColor Cyan
 Write-Host "Alternative URL: https://$PROJECT_ID.firebaseapp.com" -ForegroundColor Cyan
+

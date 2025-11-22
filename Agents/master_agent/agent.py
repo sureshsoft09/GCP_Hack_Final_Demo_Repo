@@ -26,7 +26,7 @@ dotenv_path = root_dir / ".env"
 load_dotenv(dotenv_path=dotenv_path)
 
 # Use default project from credentials if not in .env
-os.environ.setdefault("GOOGLE_CLOUD_PROJECT", "medassureaiproject")
+os.environ.setdefault("GOOGLE_CLOUD_PROJECT", "gen-lang-client-0182599221")
 os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
 os.environ.setdefault("GOOGLE_GENAI_USE_VERTEXAI", "True")
 
@@ -368,3 +368,4 @@ SECURITY & PRIVACY
     ],
     tools=[FireStoreMCP_Tool,JiraMCP_Tool]  
 )
+

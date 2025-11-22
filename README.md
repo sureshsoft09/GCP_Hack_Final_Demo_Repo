@@ -214,7 +214,7 @@ npm run build
 firebase deploy --only hosting
 ```
 
-**Live URL**: https://medassureaiproject.web.app
+**Live URL**: https://gen-lang-client-0182599221.web.app
 
 ### Backend Deployment (Google Cloud Run)
 

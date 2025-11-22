@@ -1,7 +1,7 @@
 # Firestore MCP Server Cloud Run Deployment Script (PowerShell)
 
 # Configuration
-$GOOGLE_CLOUD_PROJECT = "medassureaiproject"  # Using the actual GCP project ID
+$GOOGLE_CLOUD_PROJECT = "gen-lang-client-0182599221"  # Using the actual GCP project ID
 $REGION = "europe-west1"                       # Using europe-west1 as specified
 $SERVICE_NAME = "firestore-mcp-server"
 $SERVICE_ACCOUNT = "firestoreconnectserviceacc@$GOOGLE_CLOUD_PROJECT.iam.gserviceaccount.com"

@@ -70,3 +70,4 @@ yarn-error.log*
 *.swo
 MCP Servers/jira_mcp/jira_api_tester.py
 MCP Servers/jira_mcp/JIRA_TESTER_README.md
+

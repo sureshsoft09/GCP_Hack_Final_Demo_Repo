@@ -105,7 +105,7 @@ The server manages test data in this hierarchical format:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | `medassureaiproject` |
+| `GOOGLE_CLOUD_PROJECT` | Google Cloud project ID | `gen-lang-client-0182599221` |
 | `GOOGLE_CLOUD_LOCATION` | GCP region | `global` |
 | `FIRESTORE_DATABASE` | Firestore database ID | `(default)` |
 | `GOOGLE_APPLICATION_CREDENTIALS` | Path to service account JSON | - |

@@ -13,7 +13,7 @@ const ChatBot = () => {
   return (
     <df-messenger
       location="us"
-      project-id="medassureaiproject"
+      project-id="gen-lang-client-0182599221"
       agent-id="ac7179d3-8135-463a-9593-cdcaa41838e4"
       language-code="en"
       max-query-length="-1"

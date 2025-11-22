@@ -6,8 +6,8 @@ This guide covers deploying the MedAssure AI Agents service to Google Cloud Run.
 
 1. **Google Cloud CLI**: Ensure `gcloud` is installed and authenticated
 2. **Docker**: Required for containerization (if using Docker deployment)
-3. **Google Cloud Project**: Project ID `medassureaiproject`
-4. **Service Account**: `firestoreconnectserviceacc@medassureaiproject.iam.gserviceaccount.com`
+3. **Google Cloud Project**: Project ID `gen-lang-client-0182599221`
+4. **Service Account**: `firestoreconnectserviceacc@gen-lang-client-0182599221.iam.gserviceaccount.com`
 
 ## Deployment Options
 
@@ -25,7 +25,7 @@ chmod +x deploy.sh
 ### Option 3: Manual gcloud Command
 ```bash
 gcloud run deploy agents-server \
-    --service-account=firestoreconnectserviceacc@medassureaiproject.iam.gserviceaccount.com \
+    --service-account=firestoreconnectserviceacc@gen-lang-client-0182599221.iam.gserviceaccount.com \
     --no-allow-unauthenticated \
     --region=europe-west1 \
     --source=. \
@@ -36,15 +36,15 @@ gcloud run deploy agents-server \
     --min-instances=0 \
     --timeout=600 \
     --concurrency=80 \
-    --set-env-vars="GOOGLE_CLOUD_PROJECT=medassureaiproject,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=True,FIRESTORE_MCP_URL=https://firestore-mcp-server-518624836175.europe-west1.run.app/mcp,JIRA_MCP_URL=https://jira-mcp-server-518624836175.europe-west1.run.app/mcp" \
-    --project=medassureaiproject
+    --set-env-vars="GOOGLE_CLOUD_PROJECT=gen-lang-client-0182599221,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=True,FIRESTORE_MCP_URL=https://firestore-mcp-server-145534422719.europe-west1.run.app/mcp,JIRA_MCP_URL=https://jira-mcp-server-145534422719.europe-west1.run.app/mcp" \
+    --project=gen-lang-client-0182599221
 ```
 
 ## Environment Variables
 
 The following environment variables are configured automatically:
 
-- `GOOGLE_CLOUD_PROJECT`: medassureaiproject
+- `GOOGLE_CLOUD_PROJECT`: gen-lang-client-0182599221
 - `GOOGLE_CLOUD_LOCATION`: global
 - `GOOGLE_GENAI_USE_VERTEXAI`: True
 - `FIRESTORE_MCP_URL`: https://firestore-mcp-server-518624836175.europe-west1.run.app/mcp
@@ -82,10 +82,10 @@ After deployment, test the service:
 
 ```bash
 # Get service details
-gcloud run services describe agents-server --region=europe-west1 --project=medassureaiproject
+gcloud run services describe agents-server --region=europe-west1 --project=gen-lang-client-0182599221
 
 # Test the API endpoint
-curl -X POST "https://agents-server-europe-west1-medassureaiproject.a.run.app/query" \
+curl -X POST "https://agents-server-europe-west1-gen-lang-client-0182599221.a.run.app/query" \
   -H "Content-Type: application/json" \
   -d '{"query": "Hello, test query"}'
 ```

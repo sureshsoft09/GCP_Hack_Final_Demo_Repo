@@ -49,7 +49,7 @@ cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 if ENVIRONMENT == "production":
     # Add production frontend URLs if needed
     cors_origins.extend([
-        "https://medassureaiproject.web.app",  # Update with actual frontend URL
+        "https://gen-lang-client-0182599221.web.app",  # Update with actual frontend URL
         "*"  # Allow all origins for now - restrict this in production
     ])
 
@@ -973,3 +973,4 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=PORT)
+

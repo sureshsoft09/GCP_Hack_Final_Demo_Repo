@@ -38,7 +38,7 @@ class JiraStatus:
 class FirestoreService:
     def __init__(self):
         self.client: Optional[firestore.Client] = None
-        self.project_id = os.getenv("FIRESTORE_PROJECT_ID", "medassureaiproject")
+        self.project_id = os.getenv("FIRESTORE_PROJECT_ID", "gen-lang-client-0182599221")
         self.database_name = os.getenv("FIRESTORE_DATABASE_NAME", "medassureaifirestoredb")
         self.credentials_path = os.getenv("FIRESTORE_CREDENTIALS_PATH")
         self.projects_collection = os.getenv("FIRESTORE_PROJECTS_COLLECTION", "testcase_projects")
