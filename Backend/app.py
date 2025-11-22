@@ -269,17 +269,17 @@ async def generate_test_cases(req: PromptRequest):
     
     You are an automation assistant. Your task is to sync generated test cases between Jira and Firestore using MCP and master_agent.
     
-    **Goal:** Push generated test cases and related artifacts into Jira, retrieve Jira IDs, and update Firestore with sync status. If the Firestore project does not exist, create it before storing data.
+    **Goal:** Push generated test cases and related artifacts into Jira, retrieve Jira IDs, and update Firestore with sync status. Use the already created Firestore project for storing data.
     
     **Steps:**
     1. Use MCP via `master_agent` to create Jira issues for all generated test cases and attach related artifacts.
-    2. Retrieve the Jira IDs for all successfully created issues.
-    3. For Firestore:
+    2. While connecting Jira MCP tool use the Jira Project key passed through the above prompt. Dont use the existing key in the MCP tool.
+    3. Retrieve the Jira IDs for all successfully created issues.
+    4. For Firestore:
     - Verify if the project with ID {{FIRESTORE_PROJECT_ID}} exists.
     - If it exists, store Jira IDs (jira_issue_id) and associated metadata in the Firestore collection.
-    - If it does not exist, create a new Firestore project with ID {{FIRESTORE_PROJECT_ID}}, then store the data.
-    4. Validate that all data (test cases, Jira IDs, artifacts) is correctly stored in Firestore.
-    5. Update the `jira_status` field in Firestore to "pushed" for each test case.
+    5. Validate that all data (test cases, Jira IDs, artifacts) is correctly stored in Firestore.
+    6. Update the `jira_status` field in Firestore to "pushed" for each test case.
     
     **Requirements:**
     - Jira Project Key: {{JIRA_PROJECT_KEY}}

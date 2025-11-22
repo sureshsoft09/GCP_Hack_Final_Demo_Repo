@@ -633,7 +633,7 @@ const TestCaseGeneration = () => {
     
     try {
       const payload = {
-        prompt: "Approved to generate test cases",
+        prompt: `Approved to generate test cases. FIRESTORE_PROJECT_ID : ${projectData.id}, Project Name: ${projectData.name}, JIRA_PROJECT_KEY : ${projectData.jiraProjectKey}. Estimated counts - Epics: ${readinessMeta?.readiness_plan?.estimated_epics || 0}, Features: ${readinessMeta?.readiness_plan?.estimated_features || 0}, Use Cases: ${readinessMeta?.readiness_plan?.estimated_use_cases || 0}, Test Cases: ${readinessMeta?.readiness_plan?.estimated_test_cases || 0}`,
         metadata: {
           project_id: projectData.id,
           project_name: projectData.name,

@@ -76,7 +76,7 @@ async def call_agent_async(query, isnewproject: bool):
         events = global_runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
     except Exception as e:
         if "Session terminated" in str(e):
-            print("?? MCP session terminated — reinitializing...")
+            print("MCP session terminated reinitializing...")
             global_session, global_runner = await setup_session_and_runner()
             events = global_runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content)
         else:
@@ -118,7 +118,7 @@ async def call_agent_async(query, isnewproject: bool):
         await global_runner.memory_service.add_session_to_memory(completed_session) #type: ignore
         print("DEBUG: Session added to memory successfully")
     except Exception as e:
-        print(f"?? Skipped adding to memory: {e}")
+        print(f" Skipped adding to memory: {e}")
 
     return final_response_content, "\n".join(debug_events)
     
@@ -171,16 +171,16 @@ async def reset_session_endpoint():
 @app.on_event("startup")
 async def startup_event():
     global global_session, global_runner
-    print("?? Initializing persistent MCP session and runner...")
+    print("Initializing persistent MCP session and runner...")
     global_session, global_runner = await setup_session_and_runner()
-    print("? Persistent session and runner ready.")
+    print(" Persistent session and runner ready.")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     global global_session
     if global_session:
         await global_session.close()
-        print("?? MCP session closed.")
+        print(" MCP session closed.")
 
 # Run the query (for testing when running directly)
 if __name__ == "__main__":
