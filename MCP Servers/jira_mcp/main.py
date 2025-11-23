@@ -61,7 +61,7 @@ async def get_issues() -> dict[str, Any] | str:
         return "Unable to fetch issues."
     return data
 
-@mcp.tool()
+#@mcp.tool()
 async def create_issue(project_key: str = JIRA_PROJECT_KEY, summary: str = "", description: str = "", issue_type: str = "Task") -> dict[str, Any] | str:
     """Create a new JIRA issue."""
     url = f"{JIRA_BASE_URL}/rest/api/3/issue"
@@ -78,6 +78,38 @@ async def create_issue(project_key: str = JIRA_PROJECT_KEY, summary: str = "", d
         return "Unable to create issue."
     # Convert Issue object to dict (using .raw or extracting fields)
     return issue.raw if hasattr(issue, "raw") else {"key": getattr(issue, "key", None)}
+
+@mcp.tool()
+async def batch_create_issues(jira_issues: List[Dict[str, Any]], project_key: str = JIRA_PROJECT_KEY):
+    created = []
+    failed = []
+    
+    for idx, issue in enumerate(jira_issues):
+        try:
+
+            payload = {
+                "fields": {
+                    "project": {"key": project_key},
+                    "summary": issue["summary"],
+                    "description": issue["description"],
+                    "issuetype": {"name": issue["issue_type"]}
+                }
+            }
+                        
+            result = auth_jira.create_issue(fields=payload["fields"])
+
+            created.append({
+                "index": idx,
+                "jira_issue_id": result.id
+            })
+        except Exception as e:
+            failed.append({
+                "index": idx,
+                "error": str(e)
+            })
+            asyncio.sleep(2)  # retry spacing to avoid 429 throttling
+
+    return {"created": created, "failed": failed}
 
 @mcp.tool()
 async def search_issues(jql: str) -> dict[str, Any] | str:

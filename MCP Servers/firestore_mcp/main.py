@@ -185,6 +185,209 @@ async def search_projects(
             "error": str(e)
         }
 
+
+@mcp.tool()
+async def bulk_write_epics_structure(
+    project_id: str, 
+    epics: List[Dict[str, Any]]
+):
+    """
+    Bulk write complete epic structures (epics → features → use cases → test cases) to an existing project.
+    
+    Args:
+        project_id: The ID of the existing project to add epics to
+        epics: List of epic objects with complete nested structure:
+               {
+                   "epic_id": str,
+                   "epic_name": str,
+                   "description": str,
+                   "priority": str,
+                   "jira_issue_id": str|None,
+                   "jira_status": str,
+                   "features": [
+                       {
+                           "feature_id": str,
+                           "feature_name": str,
+                           "description": str,
+                           "priority": str,
+                           "jira_issue_id": str|None,
+                           "jira_status": str,
+                           "use_cases": [
+                               {
+                                   "use_case_id": str,
+                                   "title": str,
+                                   "description": str,
+                                   "priority": str,
+                                   "jira_issue_id": str|None,
+                                   "jira_status": str,
+                                   "test_scenarios_outline": List[str],
+                                   "model_explanation": str,
+                                   "review_status": str,
+                                   "comments": str,
+                                   "compliance_mapping": List[str],
+                                   "test_cases": [
+                                       {
+                                           "test_case_id": str,
+                                           "test_case_title": str,
+                                           "preconditions": List[str],
+                                           "test_steps": List[str],
+                                           "expected_result": str,
+                                           "test_type": str,
+                                           "priority": str,
+                                           "jira_issue_id": str|None,
+                                           "jira_status": str,
+                                           "compliance_mapping": List[str],
+                                           "model_explanation": str,
+                                           "review_status": str,
+                                           "comments": str
+                                       }
+                                   ]
+                               }
+                           ]
+                       }
+                   ]
+               }
+        
+    Returns:
+        Dict with success status and operation details
+    """
+    try:
+        # Validate project exists
+        project = firestore_client.get_project(project_id)
+        if not project:
+            return {
+                "success": False,
+                "error": f"Project {project_id} not found"
+            }
+        
+        # Keep track of created items
+        created_epics = []
+        created_features = []
+        created_use_cases = []
+        created_test_cases = []
+        
+        # Process each epic
+        for epic_data in epics:
+            if not epic_data.get("epic_name"):
+                return {
+                    "success": False,
+                    "error": "Each epic must have an 'epic_name' field"
+                }
+            
+            # Create epic
+            epic_info = {
+                "epic_name": epic_data["epic_name"],
+                "description": epic_data.get("description", ""),
+                "epic_id": epic_data.get("epic_id", ""),
+                "jira_issue_id": epic_data.get("jira_issue_id") or "",
+                "priority": epic_data.get("priority", "Medium"),
+                "jira_status": epic_data.get("jira_status", "Not Pushed"),
+                "created_at": firestore_client.get_current_timestamp()
+            }
+            
+            epic_id = firestore_client.add_epic_to_project(project_id, epic_info)
+            created_epics.append(epic_id)
+            
+            # Process features in this epic
+            features = epic_data.get("features", [])
+            for feature_data in features:
+                if not feature_data.get("feature_name"):
+                    continue  # Skip invalid features
+                
+                # Create feature
+                feature_info = {
+                    "feature_name": feature_data["feature_name"],
+                    "description": feature_data.get("description", ""),
+                    "feature_id": feature_data.get("feature_id", ""),
+                    "jira_issue_id": feature_data.get("jira_issue_id") or "",
+                    "priority": feature_data.get("priority", "Medium"),
+                    "jira_status": feature_data.get("jira_status", "Not Pushed"),
+                    "created_at": firestore_client.get_current_timestamp()
+                }
+                
+                feature_id = firestore_client.add_feature_to_epic(project_id, epic_id, feature_info)
+                created_features.append(feature_id)
+                
+                # Process use cases in this feature
+                use_cases = feature_data.get("use_cases", [])
+                for use_case_data in use_cases:
+                    if not use_case_data.get("title"):
+                        continue  # Skip invalid use cases
+                    
+                    # Create use case
+                    use_case_info = {
+                        "use_case_title": use_case_data["title"],
+                        "description": use_case_data.get("description", ""),
+                        "acceptance_criteria": [],  # Not provided in new structure
+                        "test_scenarios_outline": use_case_data.get("test_scenarios_outline", []),
+                        "model_explanation": use_case_data.get("model_explanation", ""),
+                        "review_status": use_case_data.get("review_status", "Draft"),
+                        "comments": use_case_data.get("comments", ""),
+                        "compliance_mapping": use_case_data.get("compliance_mapping", []),
+                        "use_case_id": use_case_data.get("use_case_id", ""),
+                        "jira_issue_id": use_case_data.get("jira_issue_id") or "",
+                        "priority": use_case_data.get("priority", "Medium"),
+                        "jira_status": use_case_data.get("jira_status", "Not Pushed"),
+                        "created_at": firestore_client.get_current_timestamp()
+                    }
+                    
+                    use_case_id = firestore_client.add_use_case_to_feature(project_id, epic_id, feature_id, use_case_info)
+                    created_use_cases.append(use_case_id)
+                    
+                    # Process test cases in this use case
+                    test_cases = use_case_data.get("test_cases", [])
+                    for test_case_data in test_cases:
+                        if not test_case_data.get("test_case_title"):
+                            continue  # Skip invalid test cases
+                        
+                        # Create test case using firestore_client method directly
+                        additional_fields = {
+                            "preconditions": test_case_data.get("preconditions", []),
+                            "compliance_mapping": test_case_data.get("compliance_mapping", []),
+                            "model_explanation": test_case_data.get("model_explanation", ""),
+                            "review_status": test_case_data.get("review_status", "Draft"),
+                            "comments": test_case_data.get("comments", ""),
+                            "jira_issue_id": test_case_data.get("jira_issue_id") or "",
+                            "priority": test_case_data.get("priority", "Medium"),
+                            "jira_status": test_case_data.get("jira_status", "Not Pushed")
+                        }
+                        
+                        # Include custom test_case_id if provided
+                        if test_case_data.get("test_case_id"):
+                            additional_fields["custom_test_case_id"] = test_case_data.get("test_case_id")
+                        
+                        test_case_id = firestore_client.add_test_case_to_use_case(
+                            project_id, epic_id, feature_id, use_case_id,
+                            test_case_data["test_case_title"],
+                            test_case_data.get("test_steps", []),
+                            test_case_data.get("expected_result", ""),
+                            test_case_data.get("test_type", "Functional"),
+                            additional_fields=additional_fields
+                        )
+                        created_test_cases.append(test_case_id)
+        
+        return {
+            "success": True,
+            "message": f"Successfully added complete epic structure to project {project_id}",
+            "summary": {
+                "project_id": project_id,
+                "epics_created": len(created_epics),
+                "features_created": len(created_features),
+                "use_cases_created": len(created_use_cases),
+                "test_cases_created": len(created_test_cases),
+                "epic_ids": created_epics,
+                "feature_ids": created_features,
+                "use_case_ids": created_use_cases,
+                "test_case_ids": created_test_cases
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+
 @mcp.tool()
 async def add_epic_to_project(
     project_id: str,

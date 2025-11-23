@@ -107,11 +107,11 @@ async def call_agent_async(query, isnewproject: bool):
             final_response_content = event.content.parts[0].text
 
         # For debugging, print the raw type and content to the console
-        print(f"DEBUG: Full Event: {event}")
+        print(f"DEBUG: Full Event: {str(event)[:3000]}...")
     
     print(f"DEBUG: Event processing loop completed. Processed {event_count} events")
     print("## Final Message")
-    print(final_response_content)
+    print(final_response_content[:3000] + "..." if len(final_response_content) > 3000 else final_response_content)
 
     try:
         completed_session = await global_runner.session_service.get_session(app_name=APP_NAME, user_id=USER_ID, session_id=SESSION_ID)
