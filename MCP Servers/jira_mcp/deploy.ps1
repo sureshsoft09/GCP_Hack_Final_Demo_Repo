@@ -20,7 +20,7 @@ gcloud services enable cloudbuild.googleapis.com
 Write-Host "Deploying JIRA MCP Server to Cloud Run..." -ForegroundColor Green
 gcloud run deploy $SERVICE_NAME `
     --service-account=$SERVICE_ACCOUNT `
-    --no-allow-unauthenticated `
+    --allow-unauthenticated `
     --region=$REGION `
     --source=. `
     --labels=dev-medassai=jira-mcp `

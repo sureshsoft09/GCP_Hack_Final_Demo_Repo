@@ -49,7 +49,8 @@ cors_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 if ENVIRONMENT == "production":
     # Add production frontend URLs if needed
     cors_origins.extend([
-        "https://gen-lang-client-0182599221.web.app",  # Update with actual frontend URL
+        "https://gen-lang-client-0182599221.web.app",
+          "https://medassureaitool.web.app"  # Update with actual frontend URL
         "*"  # Allow all origins for now - restrict this in production
     ])
 
@@ -321,7 +322,7 @@ When calling any MCP function tool:
         After Jira IDs are mapped into their corresponding artifacts:
       
         Construct a combined Firestore MCP call such as:
-        
+
         {
         "operation": "bulk_write_epics_structure",
         "project_id": "{{FIRESTORE_PROJECT_ID}}",

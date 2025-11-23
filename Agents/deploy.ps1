@@ -29,7 +29,7 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT `
 Write-Host "Deploying Agents Server to Cloud Run..." -ForegroundColor Green
 gcloud run deploy $SERVICE_NAME `
     --service-account=$SERVICE_ACCOUNT `
-    --no-allow-unauthenticated `
+    --allow-unauthenticated `
     --region=$REGION `
     --source=. `
     --labels=dev-medassai=agents-service `

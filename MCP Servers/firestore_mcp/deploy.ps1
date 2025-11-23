@@ -29,10 +29,11 @@ gcloud projects add-iam-policy-binding $GOOGLE_CLOUD_PROJECT `
 Write-Host "Deploying Firestore MCP Server to Cloud Run..." -ForegroundColor Green
 gcloud run deploy $SERVICE_NAME `
     --service-account=$SERVICE_ACCOUNT `
-    --no-allow-unauthenticated `
+    --allow-unauthenticated `
     --region=$REGION `
     --source=. `
     --labels=dev-medassai=firestore-mcp `
+    --set-env-vars=GOOGLE_CLOUD_PROJECT=$GOOGLE_CLOUD_PROJECT,FIRESTORE_DATABASE_Name=medassureaifirestoredb,ENVIRONMENT=production,DEBUG=false `
     --memory=512Mi `
     --cpu=1 `
     --max-instances=10 `
