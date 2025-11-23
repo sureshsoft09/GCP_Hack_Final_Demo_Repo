@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
 from fastmcp import FastMCP
 
@@ -191,9 +191,9 @@ async def add_epic_to_project(
     epic_name: str,
     description: str = "",
     epic_id: str = "",
-    jira_issue_id: str = "",
-    priority: str = "Medium",
-    jira_status: str = "Not Pushed"
+    jira_issue_id: Optional[str] = None,
+    priority: Optional[str] = None,
+    jira_status: Optional[str] = None
 ) -> Dict[str, Any]:
     """Add an epic to a project."""
     try:
@@ -201,9 +201,9 @@ async def add_epic_to_project(
             "epic_name": epic_name,
             "description": description,
             "epic_id": epic_id or f"epic_{len(firestore_client.get_project_epics(project_id)) + 1}",
-            "jira_issue_id": jira_issue_id,
-            "priority": priority,
-            "jira_status": jira_status,
+            "jira_issue_id": jira_issue_id or "",
+            "priority": priority or "Medium",
+            "jira_status": jira_status or "Not Pushed",
             "created_at": firestore_client.get_current_timestamp()
         }
         
@@ -243,9 +243,9 @@ async def add_feature_to_epic(
     feature_name: str,
     description: str = "",
     feature_id: str = "",
-    jira_issue_id: str = "",
-    priority: str = "Medium",
-    jira_status: str = "Not Pushed"
+    jira_issue_id: Optional[str] = None,
+    priority: Optional[str] = None,
+    jira_status: Optional[str] = None
 ) -> Dict[str, Any]:
     """Add a feature to an epic."""
     try:
@@ -253,9 +253,9 @@ async def add_feature_to_epic(
             "feature_name": feature_name,
             "description": description,
             "feature_id": feature_id or f"feature_{len(firestore_client.get_epic_features(project_id, epic_id)) + 1}",
-            "jira_issue_id": jira_issue_id,
-            "priority": priority,
-            "jira_status": jira_status,
+            "jira_issue_id": jira_issue_id or "",
+            "priority": priority or "Medium",
+            "jira_status": jira_status or "Not Pushed",
             "created_at": firestore_client.get_current_timestamp()
         }
         
@@ -302,9 +302,9 @@ async def add_use_case_to_feature(
     comments: str = "",
     compliance_mapping: List[str] = [],
     use_case_id: str = "",
-    jira_issue_id: str = "",
-    priority: str = "Medium",
-    jira_status: str = "Not Pushed"
+    jira_issue_id: Optional[str] = None,
+    priority: Optional[str] = None,
+    jira_status: Optional[str] = None
 ) -> Dict[str, Any]:
     """Add a use case to a feature."""
     try:
@@ -318,9 +318,9 @@ async def add_use_case_to_feature(
             "comments": comments,
             "compliance_mapping": compliance_mapping,
             "use_case_id": use_case_id or f"uc_{len(firestore_client.get_feature_use_cases(project_id, epic_id, feature_id)) + 1}",
-            "jira_issue_id": jira_issue_id,
-            "priority": priority,
-            "jira_status": jira_status,
+            "jira_issue_id": jira_issue_id or "",
+            "priority": priority or "Medium",
+            "jira_status": jira_status or "Not Pushed",
             "created_at": firestore_client.get_current_timestamp()
         }
         
@@ -369,9 +369,9 @@ async def add_test_case_to_use_case(
     model_explanation: str = "",
     review_status: str = "Draft",
     comments: str = "",
-    jira_issue_id: str = "",
-    priority: str = "Medium",
-    jira_status: str = "Not Pushed"
+    jira_issue_id: Optional[str] = None,
+    priority: Optional[str] = None,
+    jira_status: Optional[str] = None
 ) -> Dict[str, Any]:
     """Add a new test case to a use case."""
     try:
@@ -382,9 +382,9 @@ async def add_test_case_to_use_case(
             "model_explanation": model_explanation,
             "review_status": review_status,
             "comments": comments,
-            "jira_issue_id": jira_issue_id,
-            "priority": priority,
-            "jira_status": jira_status
+            "jira_issue_id": jira_issue_id or "",
+            "priority": priority or "Medium",
+            "jira_status": jira_status or "Not Pushed"
         }
         
         # Include custom test_case_id if provided
