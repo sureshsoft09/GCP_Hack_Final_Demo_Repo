@@ -55,10 +55,26 @@ import {
   Refresh as RefreshIcon,
   TableChart as ExcelIcon,
   Code as XmlIcon,
+  Launch as LaunchIcon,
 } from '@mui/icons-material';
 import { useNotification } from '../contexts/NotificationContext';
+import JiraImage from '../assets/Jira_Image.png';
 import api from '../services/api';
 import exportService from '../services/exportService';
+
+// Custom Jira Icon component using the actual Jira image
+const JiraIcon = ({ sx = {} }) => (
+  <img 
+    src={JiraImage} 
+    alt="Jira" 
+    style={{
+      width: sx.fontSize || '16px',
+      height: sx.fontSize || '16px',
+      objectFit: 'contain',
+      ...sx
+    }}
+  />
+);
 
 const Dashboard = () => {
   const [projects, setProjects] = useState([]);
@@ -398,11 +414,21 @@ const Dashboard = () => {
                 />
                 {testCase.jira_issue_id && (
                   <Chip
-                    label={`JIRA: ${testCase.jira_issue_id}`}
+                    icon={<JiraIcon sx={{ fontSize: '14px' }} />}
+                    label={testCase.jira_issue_id}
                     size="small"
                     variant="outlined"
                     color="primary"
-                    sx={{ fontSize: '0.7rem', height: '20px' }}
+                    sx={{ 
+                      fontSize: '0.7rem', 
+                      height: '20px',
+                      borderColor: '#0052CC',
+                      color: '#0052CC',
+                      '& .MuiChip-icon': {
+                        marginLeft: '4px',
+                        marginRight: '-2px'
+                      }
+                    }}
                   />
                 )}
                 {testCase.priority && (
@@ -517,11 +543,21 @@ const Dashboard = () => {
                   </Badge>
                   {useCase.jira_issue_id && (
                     <Chip
-                      label={`JIRA: ${useCase.jira_issue_id}`}
+                      icon={<JiraIcon sx={{ fontSize: '16px' }} />}
+                      label={useCase.jira_issue_id}
                       size="small"
                       variant="outlined"
                       color="primary"
-                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                      sx={{ 
+                        ml: 1, 
+                        fontSize: '0.75rem',
+                        borderColor: '#0052CC',
+                        color: '#0052CC',
+                        '& .MuiChip-icon': {
+                          marginLeft: '4px',
+                          marginRight: '-2px'
+                        }
+                      }}
                     />
                   )}
                   {useCase.priority && (
@@ -601,11 +637,21 @@ const Dashboard = () => {
                   </Badge>
                   {feature.jira_issue_id && (
                     <Chip
-                      label={`JIRA: ${feature.jira_issue_id}`}
+                      icon={<JiraIcon sx={{ fontSize: '16px' }} />}
+                      label={feature.jira_issue_id}
                       size="small"
                       variant="outlined"
                       color="primary"
-                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                      sx={{ 
+                        ml: 1, 
+                        fontSize: '0.75rem',
+                        borderColor: '#0052CC',
+                        color: '#0052CC',
+                        '& .MuiChip-icon': {
+                          marginLeft: '4px',
+                          marginRight: '-2px'
+                        }
+                      }}
                     />
                   )}
                   {feature.priority && (
@@ -685,11 +731,21 @@ const Dashboard = () => {
                   </Badge>
                   {epic.jira_issue_id && (
                     <Chip
-                      label={`JIRA: ${epic.jira_issue_id}`}
+                      icon={<JiraIcon sx={{ fontSize: '16px' }} />}
+                      label={epic.jira_issue_id}
                       size="small"
                       variant="outlined"
                       color="primary"
-                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                      sx={{ 
+                        ml: 1, 
+                        fontSize: '0.75rem',
+                        borderColor: '#0052CC',
+                        color: '#0052CC',
+                        '& .MuiChip-icon': {
+                          marginLeft: '4px',
+                          marginRight: '-2px'
+                        }
+                      }}
                     />
                   )}
                   {epic.priority && (
@@ -857,14 +913,29 @@ const Dashboard = () => {
         <Typography variant="h4" sx={{ fontWeight: 700, color: '#667eea' }}>
           Project Dashboard
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <Button
+            variant="contained"
+            startIcon={<LaunchIcon />}
+            onClick={() => window.open('https://vibetesting-app-145534422719.europe-west1.run.app/', '_blank')}
+            sx={{ 
+              backgroundColor: '#667eea',
+              '&:hover': {
+                backgroundColor: '#5a67d8'
+              }
+            }}
+          >
+            Vibe Testing
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={refreshing ? <CircularProgress size={16} /> : <RefreshIcon />}
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        </Box>
       </Box>
 
       {/* Statistics Cards */}
