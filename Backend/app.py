@@ -268,81 +268,19 @@ async def generate_test_cases(req: PromptRequest):
 
     prompt_pushdata = """
     
-   Push all generated artifacts (Epics → Features → Use Cases → Test Cases) to Jira in bulk, retrieve Jira issue IDs, map them back into the artifacts, and then write the entire hierarchy to Firestore using a single bulk write operation.
+   Push all the generated artifacts (Epics → Features → Use Cases → Test Cases) to Jira in bulk, retrieve Jira issue IDs, map them back into the artifacts, and then write the entire hierarchy to Firestore using a single bulk write operation.
 
     ---
-    master_agent to
-        → Takes generated artifacts (epics/features/use cases/test cases)
-        → Builds a batch_create_issues payload (list)
-        → Calls MCP Jira tool once
-        → Gets all created Jira issue IDs back
-        → Maps IDs to the artifacts
-        → Stores the enriched results to Firestore through bulk_write_epics_structure
+   Follow workflow:
+    1. Batch-create Jira issues
+    2. Map Jira IDs back into artifacts
+    3. bulk_write_epics_structure to Firestore, Use the Firestore project ID passed into the input.
 
-When calling any MCP function tool:
-    - The final message must contain **only** valid JSON arguments for the function
+    #### Strict Rule #####
+    When calling any MCP function tool:
+    - The final message must contain only valid JSON arguments for the function
     - No Python code, no comments, no variable setup, no explanation
     - All reasoning must be done internally
-
-#### Workflow Instructions
-
-    ## 1. Jira Synchronization (Batch)
-
-        1. Read the list of generated artifacts (epics, features, use cases, test cases).
-        2. Construct a single batch Jira MCP call, not individual per-item calls, to avoid 429 throttling:
-
-        {
-        "operation": "batch_create_issues",
-        "jira_project_key": "{{JIRA_PROJECT_KEY}}",
-        "jira_issues": [
-            {
-            "issue_type": "...",
-            "summary": "...",
-            "description": "..."
-            }
-        ]
-        }
-
-        3. Execute the Jira MCP tool.
-
-        4. Receive the batch response containing:
-
-            jira_issue_id for each created issue
-
-            Index-based matching to artifacts
-
-        5. For each artifact:
-
-            Add jira_issue_id
-
-            Set jira_status = "pushed"
-
-    ## 2. Firestore Bulk Write
-
-        After Jira IDs are mapped into their corresponding artifacts:
-      
-        Construct a combined Firestore MCP call such as:
-
-        {
-        "operation": "bulk_write_epics_structure",
-        "project_id": "{{FIRESTORE_PROJECT_ID}}",
-        "epics": [
-            {...}
-            {...}
-        ]
-        }
-
-        Rules:
-
-        ✔ Write the entire nested hierarchy in one MCP call, not item-by-item.
-        ✔ Use the Firestore project ID passed into the input ({{FIRESTORE_PROJECT_ID}}).
-        ✔ If the Firestore project does not exist:
-        
-    3. Post-Write Validation
-
-    After Firestore bulk-write:
-    - Return success status and summary
-
 
     """
     response_FirestoreJira_status = await call_agents_api(prompt_pushdata)
