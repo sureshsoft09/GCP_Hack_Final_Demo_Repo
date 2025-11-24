@@ -26,7 +26,7 @@ test_generator_agent_tool = agent_tool.AgentTool(agent=test_generator_agent)
 
 migrate_testcase_agent = Agent(
     name="migrate_testcase_agent",
-    model="gemini-2.5-flash",
+    model=os.getenv('AGENT_MODEL', 'gemini-2.5-flash'),
     instruction="""
 You are the MASTER_AGENT — the central orchestrator responsible for managing and routing tasks to specialized agents. 
 You are connected to the following agent tools:

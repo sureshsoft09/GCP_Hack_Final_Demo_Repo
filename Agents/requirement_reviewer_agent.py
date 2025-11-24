@@ -21,7 +21,7 @@ logger = logging_client.logger("requirement_reviewer_agent")
 
 requirement_reviewer_agent = Agent(
     name="requirement_reviewer_agent",
-    model="gemini-2.5-flash",
+    model=os.getenv('AGENT_MODEL', 'gemini-2.5-flash'),
     instruction="""
 You are the `requirement_reviewer_agent`, the first agent in the healthcare ALM test-generation pipeline.  
 Your responsibility is to review uploaded requirement documents, validate them against healthcare regulatory standards, identify ambiguities, request clarifications, and estimate the number of required test artifacts before downstream agents proceed.

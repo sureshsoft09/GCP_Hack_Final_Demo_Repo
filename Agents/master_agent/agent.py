@@ -55,9 +55,9 @@ migrate_testcase_agent_tool = agent_tool.AgentTool(agent=migrate_testcase_agent)
 
 root_agent = Agent(
     name="master_agent",
-    model="gemini-2.5-flash",
+    model=os.getenv('AGENT_MODEL', 'gemini-2.5-flash'),
     generate_content_config=types.GenerateContentConfig(
-        temperature=0.2, # More deterministic output
+        temperature=0, # More deterministic output
         #max_output_tokens=250,
         safety_settings=[
             types.SafetySetting(

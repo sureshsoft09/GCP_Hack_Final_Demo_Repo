@@ -26,7 +26,7 @@ test_generator_agent_tool = agent_tool.AgentTool(agent=test_generator_agent)
 
 enhance_testcase_agent = Agent(
     name="enhance_testcase_agent",
-    model="gemini-2.5-flash",
+    model=os.getenv('AGENT_MODEL', 'gemini-2.5-flash'),
     instruction="""
 ## Overview  
 The `enhance_testcase_agent` is responsible for updating, revising, and enhancing test artifacts (epics, features,  use cases, and test cases) based on newly provided user changes or refinements. It must operate in two scenarios:
