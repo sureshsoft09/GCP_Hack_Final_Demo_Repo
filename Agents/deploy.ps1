@@ -36,7 +36,7 @@ gcloud run deploy $SERVICE_NAME `
     --memory=1Gi `
     --cpu=1 `
     --max-instances=10 `
-    --min-instances=0 `
+    --min-instances=1 `
     --timeout=600 `
     --concurrency=80 `
     --set-env-vars="GOOGLE_CLOUD_PROJECT=gen-lang-client-0182599221,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=True,FIRESTORE_MCP_URL=https://firestore-mcp-server-145534422719.europe-west1.run.app/mcp,JIRA_MCP_URL=https://jira-mcp-server-145534422719.europe-west1.run.app/mcp" `

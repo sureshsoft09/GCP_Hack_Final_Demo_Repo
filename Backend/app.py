@@ -268,19 +268,50 @@ async def generate_test_cases(req: PromptRequest):
 
     prompt_pushdata = """
     
-   Push all the generated artifacts (Epics → Features → Use Cases → Test Cases) to Jira in bulk, retrieve Jira issue IDs, map them back into the artifacts, and then write the entire hierarchy to Firestore using a single bulk write operation.
+    Push artifacts (Epics → Features → Use Cases → Test Cases) to Jira in a single batch, then write the enriched hierarchy to Firestore in one bulk write.
 
-    ---
-   Follow workflow:
-    1. Batch-create Jira issues
-    2. Map Jira IDs back into artifacts
-    3. bulk_write_epics_structure to Firestore, Use the Firestore project ID passed into the input.
+    Rules
 
-    #### Strict Rule #####
-    When calling any MCP function tool:
-    - The final message must contain only valid JSON arguments for the function
-    - No Python code, no comments, no variable setup, no explanation
-    - All reasoning must be done internally
+        When calling any MCP tool, the final message MUST contain only valid JSON arguments matching the function signature.
+        No Python code, no comments, no explanations in the tool call.
+        All reasoning must be internal.
+
+    Workflow
+
+        1. Read input and ensure epics is at the top level.
+        2. Build one Jira batch payload:
+
+            {
+            "operation": "batch_create_issues",
+            "jira_project_key": "{{JIRA_PROJECT_KEY}}",
+            "jira_issues": [ ... ]
+            }
+
+            One issue entry per epic/feature/use case/test case.
+            Include external_ref (e.g., epic_id, feature_id) for mapping.
+
+        3. Call Jira MCP once and get a list of created issues with jira_issue_id values.
+        4. Map Jira IDs into the artifacts, setting jira_status = "pushed".
+        5. Construct one Firestore MCP call:
+
+            {
+            "operation": "bulk_write_epics_structure",
+            "project_id": "{{FIRESTORE_PROJECT_ID}}",
+            "epics": [ ... full hierarchy with mapped jira_issue_id ... ]
+            }
+
+        6. Call Firestore MCP once with only that JSON.
+        7. Return a JSON summary of results
+
+    Validation
+
+        If final JSON is invalid or missing required fields, return an error instead of calling a tool:
+
+        { "error": "invalid_payload" }
+
+    Key Reminder
+
+        MCP function messages must contain only JSON—no prose, no formatting, no code blocks.
 
     """
     response_FirestoreJira_status = await call_agents_api(prompt_pushdata)

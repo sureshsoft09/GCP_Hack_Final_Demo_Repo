@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from google.adk.agents import Agent
 from google.cloud import logging as google_cloud_logging
 from google.adk.tools import agent_tool
+from google.genai import types
 
 from google.adk.tools.mcp_tool.mcp_toolset import MCPToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
@@ -55,6 +56,16 @@ migrate_testcase_agent_tool = agent_tool.AgentTool(agent=migrate_testcase_agent)
 root_agent = Agent(
     name="master_agent",
     model="gemini-2.5-flash",
+    generate_content_config=types.GenerateContentConfig(
+        temperature=0.2, # More deterministic output
+        #max_output_tokens=250,
+        safety_settings=[
+            types.SafetySetting(
+                category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+            )
+        ]
+    ),
     instruction= """
 You are master_agent — the central orchestrator and control layer for the MedAssureAI Healthcare Test Case Generation system. You maintain session memory, route tasks to appropriate sub-agents, and are the ONLY component allowed to call Jira or Firestore MCP tools.
 

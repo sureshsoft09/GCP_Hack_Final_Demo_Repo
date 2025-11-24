@@ -27,7 +27,7 @@ gcloud run deploy $SERVICE_NAME `
     --memory=512Mi `
     --cpu=1 `
     --max-instances=10 `
-    --min-instances=0 `
+    --min-instances=1 `
     --timeout=600 `
     --concurrency=80 `
     --set-env-vars="JIRA_BASE_URL=https://hsskill.atlassian.net,JIRA_EMAIL=aravinthan.babu@gmail.com,JIRA_API_TOKEN=ATATT3xFfGF0qICQDCOkIooiOpkMakbkfgc12T_qeE7waGnsYer5POSma97gpiwnX6QAi8nvm9-h7bqDupLQog59fib5gsrokfNA-6S4L5gQxva2Eh_YaW6g-KOHhHgqp5ryqzu9W5mnvWAubIFE7LGJ77emj4l8O0-FqEL8GBUOkwOdKji5TIc=B5713370,JIRA_PROJECT_KEY=HS25SKL" `
