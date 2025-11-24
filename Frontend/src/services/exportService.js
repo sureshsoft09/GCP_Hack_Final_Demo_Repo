@@ -267,12 +267,15 @@ class ExportService {
     }
 
     xml += '  <epics>\n';
+    const projectJiraKey = projectData.jira_project_key || '';
     projectData.epics?.forEach((epic) => {
       xml += '    <epic>\n';
       xml += `      <epic_id>${epic.epic_id || ''}</epic_id>\n`;
       xml += `      <title>${epic.epic_name || epic.title || ''}</title>\n`;
       xml += `      <description>${epic.description || ''}</description>\n`;
       xml += `      <priority>${epic.priority || 'Medium'}</priority>\n`;
+      xml += `      <jira_issue_id>${epic.jira_issue_id || ''}</jira_issue_id>\n`;
+      xml += `      <jira_project_key>${epic.jira_project_key || projectJiraKey}</jira_project_key>\n`;
       
       if (epic.compliance_tags?.length > 0) {
         xml += '      <compliance_tags>\n';
@@ -288,6 +291,9 @@ class ExportService {
         xml += `          <feature_id>${feature.feature_id || ''}</feature_id>\n`;
         xml += `          <title>${feature.feature_name || feature.title || ''}</title>\n`;
         xml += `          <description>${feature.description || ''}</description>\n`;
+        xml += `          <priority>${feature.priority || epic.priority || 'Medium'}</priority>\n`;
+        xml += `          <jira_issue_id>${feature.jira_issue_id || epic.jira_issue_id || ''}</jira_issue_id>\n`;
+        xml += `          <jira_project_key>${feature.jira_project_key || epic.jira_project_key || projectJiraKey}</jira_project_key>\n`;
 
         xml += '          <use_cases>\n';
         feature.use_cases?.forEach((useCase) => {
@@ -295,6 +301,17 @@ class ExportService {
           xml += `              <use_case_id>${useCase.use_case_id || ''}</use_case_id>\n`;
           xml += `              <title>${useCase.use_case_title || useCase.title || ''}</title>\n`;
           xml += `              <description>${useCase.description || ''}</description>\n`;
+          xml += `              <priority>${useCase.priority || feature.priority || epic.priority || 'Medium'}</priority>\n`;
+          xml += `              <jira_issue_id>${useCase.jira_issue_id || feature.jira_issue_id || epic.jira_issue_id || ''}</jira_issue_id>\n`;
+          xml += `              <jira_project_key>${useCase.jira_project_key || feature.jira_project_key || epic.jira_project_key || projectJiraKey}</jira_project_key>\n`;
+          
+          if (useCase.test_scenarios_outline && Array.isArray(useCase.test_scenarios_outline)) {
+            xml += '              <test_scenarios_outline>\n';
+            useCase.test_scenarios_outline.forEach(criteria => {
+              xml += `                <criteria>${criteria}</criteria>\n`;
+            });
+            xml += '              </test_scenarios_outline>\n';
+          }
           
           if (useCase.model_explanation) {
             xml += `              <model_explanation>${useCase.model_explanation}</model_explanation>\n`;
@@ -305,9 +322,11 @@ class ExportService {
             xml += '                <test_case>\n';
             xml += `                  <test_case_id>${testCase.test_case_id || testCase.custom_test_case_id || ''}</test_case_id>\n`;
             xml += `                  <title>${testCase.test_case_title || testCase.title || ''}</title>\n`;
-            xml += `                  <priority>${testCase.priority || 'Medium'}</priority>\n`;
+            xml += `                  <priority>${testCase.priority || useCase.priority || feature.priority || epic.priority || 'Medium'}</priority>\n`;
             xml += `                  <test_type>${testCase.test_type || 'Functional'}</test_type>\n`;
             xml += `                  <review_status>${testCase.review_status || 'Pending'}</review_status>\n`;
+            xml += `                  <jira_issue_id>${testCase.jira_issue_id || useCase.jira_issue_id || feature.jira_issue_id || epic.jira_issue_id || ''}</jira_issue_id>\n`;
+            xml += `                  <jira_project_key>${testCase.jira_project_key || useCase.jira_project_key || feature.jira_project_key || epic.jira_project_key || projectJiraKey}</jira_project_key>\n`;
             
             if (testCase.preconditions && testCase.preconditions.length > 0) {
               xml += '                  <preconditions>\n';
@@ -341,11 +360,19 @@ class ExportService {
               xml += `                  <model_explanation>${testCase.model_explanation}</model_explanation>\n`;
             }
             
+            if (testCase.comments) {
+              xml += `                  <comments>${testCase.comments}</comments>\n`;
+            }
+            
             if (testCase.compliance_mapping && testCase.compliance_mapping.length > 0) {
               xml += '                  <compliance_mapping>\n';
-              testCase.compliance_mapping.forEach(compliance => {
-                xml += `                    <compliance>${compliance}</compliance>\n`;
-              });
+              if (Array.isArray(testCase.compliance_mapping)) {
+                testCase.compliance_mapping.forEach(compliance => {
+                  xml += `                    <compliance>${compliance}</compliance>\n`;
+                });
+              } else {
+                xml += `                    <compliance>${testCase.compliance_mapping}</compliance>\n`;
+              }
               xml += '                  </compliance_mapping>\n';
             }
             
@@ -431,25 +458,35 @@ class ExportService {
    * Export to Excel format (flat rows: epic/feature/use_case repeated per test case)
    */
   exportToExcel(projectData, fileName) {
-    // Columns: epic_id, epic_title, feature_id, feature_title, use_case_id, use_case_title,
-    // test_scenarios_outline (use case acceptance criteria), test_case_id, test_case_title,
-    // preconditions, test_steps, expected_result, model_explanation, review_status
+    // All requested columns for comprehensive export
     const rows = [];
+    
+    // Get project-level jira_project_key as fallback
+    const projectJiraKey = projectData.jira_project_key || '';
 
     projectData.epics?.forEach((epic) => {
       const epicId = epic.epic_id || '';
       const epicTitle = epic.epic_name || epic.title || '';
+      const epicDescription = epic.description || '';
+      const epicJiraIssueId = epic.jira_issue_id || '';
+      const epicJiraProjectKey = epic.jira_project_key || projectJiraKey;
 
       epic.features?.forEach((feature) => {
         const featureId = feature.feature_id || '';
         const featureTitle = feature.feature_name || feature.title || '';
+        const featureDescription = feature.description || '';
+        const featureJiraIssueId = feature.jira_issue_id || '';
+        const featureJiraProjectKey = feature.jira_project_key || epicJiraProjectKey;
 
         feature.use_cases?.forEach((useCase) => {
           const useCaseId = useCase.use_case_id || '';
           const useCaseTitle = useCase.use_case_title || useCase.title || '';
-          const testScenarios = Array.isArray(useCase.acceptance_criteria)
-            ? useCase.acceptance_criteria.join(' | ')
-            : (useCase.acceptance_criteria || '');
+          const useCaseDescription = useCase.description || '';
+          const useCaseJiraIssueId = useCase.jira_issue_id || '';
+          const useCaseJiraProjectKey = useCase.jira_project_key || featureJiraProjectKey;
+          const testScenarios = Array.isArray(useCase.test_scenarios_outline)
+            ? useCase.test_scenarios_outline.join(' | ')
+            : (useCase.test_scenarios_outline || '');
 
           if (useCase.test_cases && useCase.test_cases.length > 0) {
             useCase.test_cases.forEach((testCase) => {
@@ -458,28 +495,48 @@ class ExportService {
               const preconditions = Array.isArray(testCase.preconditions)
                 ? testCase.preconditions.join(' | ')
                 : (testCase.preconditions || '');
+              const testType = testCase.test_type || 'Functional';
               const testSteps = Array.isArray(testCase.test_steps)
                 ? testCase.test_steps.join(' | ')
                 : (testCase.test_steps || '');
               const expectedResult = testCase.expected_result || '';
+              const complianceMapping = Array.isArray(testCase.compliance_mapping)
+                ? testCase.compliance_mapping.join(' | ')
+                : (testCase.compliance_mapping || '');
+              const testCaseJiraIssueId = testCase.jira_issue_id || '';
+              const priority = testCase.priority || '';
+              const comments = testCase.comments || '';
               const modelExplanation = testCase.model_explanation || '';
               const reviewStatus = testCase.review_status || '';
+              const jiraProjectKey = testCase.jira_project_key || useCaseJiraProjectKey;
 
               rows.push({
                 epic_id: epicId,
                 epic_title: epicTitle,
+                epic_description: epicDescription,
+                epic_jira_issue_id: epicJiraIssueId,
                 feature_id: featureId,
                 feature_title: featureTitle,
+                feature_description: featureDescription,
+                feature_jira_issue_id: featureJiraIssueId,
                 use_case_id: useCaseId,
                 use_case_title: useCaseTitle,
+                use_case_description: useCaseDescription,
+                use_case_jira_issue_id: useCaseJiraIssueId,
                 test_scenarios_outline: testScenarios,
                 test_case_id: testCaseId,
                 test_case_title: testCaseTitle,
-                preconditions,
+                preconditions: preconditions,
+                test_type: testType,
                 test_steps: testSteps,
                 expected_result: expectedResult,
+                compliance_mapping: complianceMapping,
+                test_case_jira_issue_id: testCaseJiraIssueId,
+                priority: priority,
+                comments: comments,
                 model_explanation: modelExplanation,
                 review_status: reviewStatus,
+                jira_project_key: jiraProjectKey
               });
             });
           } else {
@@ -487,35 +544,53 @@ class ExportService {
             rows.push({
               epic_id: epicId,
               epic_title: epicTitle,
+              epic_description: epicDescription,
+              epic_jira_issue_id: epicJiraIssueId,
               feature_id: featureId,
               feature_title: featureTitle,
+              feature_description: featureDescription,
+              feature_jira_issue_id: featureJiraIssueId,
               use_case_id: useCaseId,
               use_case_title: useCaseTitle,
+              use_case_description: useCaseDescription,
+              use_case_jira_issue_id: useCaseJiraIssueId,
               test_scenarios_outline: testScenarios,
               test_case_id: '',
               test_case_title: '',
-              preconditions: Array.isArray(useCase.preconditions) ? useCase.preconditions.join(' | ') : (useCase.preconditions || ''),
-              test_steps: Array.isArray(useCase.test_steps) ? useCase.test_steps.join(' | ') : (useCase.test_steps || ''),
-              expected_result: useCase.expected_result || '',
-              model_explanation: useCase.model_explanation || '',
-              review_status: useCase.review_status || '',
+              preconditions: '',
+              test_type: '',
+              test_steps: '',
+              expected_result: '',
+              compliance_mapping: '',
+              test_case_jira_issue_id: '',
+              priority: '',
+              comments: '',
+              model_explanation: '',
+              review_status: '',
+              jira_project_key: useCaseJiraProjectKey
             });
           }
         });
       });
     });
 
-    // Build worksheet and workbook
+    // Build worksheet and workbook with all requested columns
     const worksheetData = [
       [
-        'Epic ID', 'Epic Title', 'Feature ID', 'Feature Title', 'Use Case ID', 'Use Case Title',
-        'Test Scenarios Outline', 'Test Case ID', 'Test Case Title', 'Preconditions', 'Test Steps',
-        'Expected Result', 'Model Explanation', 'Review Status'
+        'Epic ID', 'Epic Title', 'Epic Description', 'Epic Jira Issue ID',
+        'Feature ID', 'Feature Title', 'Feature Description', 'Feature Jira Issue ID',
+        'Use Case ID', 'Use Case Title', 'Use Case Description', 'Use Case Jira Issue ID', 'Test Scenarios Outline',
+        'Test Case ID', 'Test Case Title', 'Preconditions', 'Test Type', 'Test Steps', 'Expected Result',
+        'Compliance Mapping', 'Test Case Jira Issue ID', 'Priority', 'Comments', 'Model Explanation', 'Review Status',
+        'Jira Project Key'
       ],
       ...rows.map(r => [
-        r.epic_id, r.epic_title, r.feature_id, r.feature_title, r.use_case_id, r.use_case_title,
-        r.test_scenarios_outline, r.test_case_id, r.test_case_title, r.preconditions, r.test_steps,
-        r.expected_result, r.model_explanation, r.review_status
+        r.epic_id, r.epic_title, r.epic_description, r.epic_jira_issue_id,
+        r.feature_id, r.feature_title, r.feature_description, r.feature_jira_issue_id,
+        r.use_case_id, r.use_case_title, r.use_case_description, r.use_case_jira_issue_id, r.test_scenarios_outline,
+        r.test_case_id, r.test_case_title, r.preconditions, r.test_type, r.test_steps, r.expected_result,
+        r.compliance_mapping, r.test_case_jira_issue_id, r.priority, r.comments, r.model_explanation, r.review_status,
+        r.jira_project_key
       ])
     ];
 

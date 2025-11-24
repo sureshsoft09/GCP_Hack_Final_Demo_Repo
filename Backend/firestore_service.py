@@ -180,7 +180,13 @@ class FirestoreService:
                         'total_features': total_features,
                         'total_use_cases': total_use_cases,
                         'total_test_cases': total_test_cases,
-                        'status': project_data.get('status', 'active')
+                        'status': project_data.get('status', 'active'),
+                        'jira_project_key': project_data.get('jira_project_key', ''),
+                        'jira_project_url': project_data.get('jira_project_url', ''),
+                        'notification_email': project_data.get('notification_email', ''),
+                        'compliance_frameworks': project_data.get('compliance_frameworks', []),
+                        'coverage_summary': project_data.get('coverage_summary', None),
+                        'created_by': project_data.get('created_by', None)
                     })
             
             return projects

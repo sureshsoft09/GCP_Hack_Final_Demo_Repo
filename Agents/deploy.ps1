@@ -38,6 +38,7 @@ gcloud run deploy $SERVICE_NAME `
     --max-instances=10 `
     --min-instances=1 `
     --timeout=600 `
+    --set-env-vars="AGENT_MODEL=gemini-3-pro-preview" `
     --concurrency=80 `
     --set-env-vars="GOOGLE_CLOUD_PROJECT=gen-lang-client-0182599221,GOOGLE_CLOUD_LOCATION=global,GOOGLE_GENAI_USE_VERTEXAI=True,FIRESTORE_MCP_URL=https://firestore-mcp-server-145534422719.europe-west1.run.app/mcp,JIRA_MCP_URL=https://jira-mcp-server-145534422719.europe-west1.run.app/mcp" `
     --project=$GOOGLE_CLOUD_PROJECT

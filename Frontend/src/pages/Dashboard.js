@@ -153,6 +153,8 @@ const Dashboard = () => {
         ...project.hierarchy,
         name: project.project_name,
         project_id: project.project_id,
+        jira_project_key: project.jira_project_key,
+        jira_project_url: project.jira_project_url,
         statistics: project.statistics || {}
       };
       await exportService.exportProject(projectData, format, project.project_name);
@@ -237,6 +239,8 @@ const Dashboard = () => {
         name: project.project_name,
         created_date: project.created_at,
         status: project.status,
+        jira_project_key: project.jira_project_key,
+        jira_project_url: project.jira_project_url,
         statistics: {
           total_epics: project.total_epics || 0,
           total_features: project.total_features || 0,
@@ -255,17 +259,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleExportAllProjects = async (format) => {
-    try {
-      for (const project of projects) {
-        await handleExportProject(project, format);
-      }
-      showNotification(`Successfully exported all projects as ${format.toUpperCase()}`, 'success');
-    } catch (error) {
-      console.error(`Error exporting all projects as ${format}:`, error);
-      showNotification(`Failed to export all projects as ${format.toUpperCase()}`, 'error');
-    }
-  };
+
 
   const toggleProjectExpansion = (projectId) => {
     setExpandedProjects(prev => ({
@@ -393,7 +387,7 @@ const Dashboard = () => {
         primary={
           <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
                 <Typography variant="subtitle2">
                   {testCase.test_case_title || `Test Case ${testCase.test_case_id}`}
                 </Typography>
@@ -402,6 +396,24 @@ const Dashboard = () => {
                   hasInfo={!!testCase.model_explanation}
                   tooltip="View AI Model Explanation"
                 />
+                {testCase.jira_issue_id && (
+                  <Chip
+                    label={`JIRA: ${testCase.jira_issue_id}`}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    sx={{ fontSize: '0.7rem', height: '20px' }}
+                  />
+                )}
+                {testCase.priority && (
+                  <Chip
+                    label={`Priority: ${testCase.priority}`}
+                    size="small"
+                    variant="outlined"
+                    color={testCase.priority === 'High' ? 'error' : testCase.priority === 'Medium' ? 'warning' : 'default'}
+                    sx={{ fontSize: '0.7rem', height: '20px' }}
+                  />
+                )}
               </Box>
               {testCase.review_status && (
                 <Chip
@@ -503,6 +515,24 @@ const Dashboard = () => {
                   <Badge badgeContent={testCases.length} color="success" sx={{ ml: 1 }}>
                     <TestCaseIcon fontSize="small" />
                   </Badge>
+                  {useCase.jira_issue_id && (
+                    <Chip
+                      label={`JIRA: ${useCase.jira_issue_id}`}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                    />
+                  )}
+                  {useCase.priority && (
+                    <Chip
+                      label={`Priority: ${useCase.priority}`}
+                      size="small"
+                      variant="outlined"
+                      color={useCase.priority === 'High' ? 'error' : useCase.priority === 'Medium' ? 'warning' : 'default'}
+                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                    />
+                  )}
                   <InfoButton
                     onClick={() => handleModelExplanation(useCase, 'use_case', projectId)}
                     hasInfo={!!useCase.model_explanation}
@@ -569,6 +599,24 @@ const Dashboard = () => {
                   <Badge badgeContent={useCases.length} color="info" sx={{ ml: 1 }}>
                     <UseCaseIcon fontSize="small" />
                   </Badge>
+                  {feature.jira_issue_id && (
+                    <Chip
+                      label={`JIRA: ${feature.jira_issue_id}`}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                    />
+                  )}
+                  {feature.priority && (
+                    <Chip
+                      label={`Priority: ${feature.priority}`}
+                      size="small"
+                      variant="outlined"
+                      color={feature.priority === 'High' ? 'error' : feature.priority === 'Medium' ? 'warning' : 'default'}
+                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                    />
+                  )}
                   <InfoButton
                     onClick={() => handleModelExplanation(feature, 'feature', projectId)}
                     hasInfo={!!feature.model_explanation}
@@ -635,6 +683,24 @@ const Dashboard = () => {
                   <Badge badgeContent={features.length} color="warning" sx={{ ml: 1 }}>
                     <FeatureIcon fontSize="small" />
                   </Badge>
+                  {epic.jira_issue_id && (
+                    <Chip
+                      label={`JIRA: ${epic.jira_issue_id}`}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                    />
+                  )}
+                  {epic.priority && (
+                    <Chip
+                      label={`Priority: ${epic.priority}`}
+                      size="small"
+                      variant="outlined"
+                      color={epic.priority === 'High' ? 'error' : epic.priority === 'Medium' ? 'warning' : 'default'}
+                      sx={{ ml: 1, fontSize: '0.75rem' }}
+                    />
+                  )}
                   <InfoButton
                     onClick={() => handleModelExplanation(epic, 'epic', projectId)}
                     hasInfo={!!epic.model_explanation}
@@ -856,28 +922,6 @@ const Dashboard = () => {
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Projects Overview
           </Typography>
-          {projects.length > 0 && (
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<ExcelIcon />}
-                onClick={() => handleExportAllProjects('excel')}
-                sx={{ color: '#1976d2', borderColor: '#1976d2' }}
-              >
-                Export Excel
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<XmlIcon />}
-                onClick={() => handleExportAllProjects('xml')}
-                sx={{ color: '#f57c00', borderColor: '#f57c00' }}
-              >
-                Export XML
-              </Button>
-            </Box>
-          )}
         </Box>
         {projects.length > 0 ? (
           projects.map((project) => (

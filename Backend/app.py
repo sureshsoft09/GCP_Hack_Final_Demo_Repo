@@ -123,6 +123,12 @@ class ProjectHierarchy(BaseModel):
     last_updated: Optional[str] = None
     total_test_cases: int = 0
     model_explanation: Optional[str] = None
+    jira_project_key: Optional[str] = None
+    jira_project_url: Optional[str] = None
+    notification_email: Optional[str] = None
+    compliance_frameworks: List[str] = []
+    coverage_summary: Optional[str] = None
+    status: str = "Active"
 
 class ProjectCreationRequest(BaseModel):
     project_name: str
@@ -564,7 +570,13 @@ def convert_firestore_to_hierarchy(firestore_data: dict) -> ProjectHierarchy:
             created_at=created_at,
             last_updated=last_updated,
             total_test_cases=total_test_cases,
-            model_explanation=model_explanation
+            model_explanation=model_explanation,
+            jira_project_key=firestore_data.get("jira_project_key"),
+            jira_project_url=firestore_data.get("jira_project_url"),
+            notification_email=firestore_data.get("notification_email"),
+            compliance_frameworks=firestore_data.get("compliance_frameworks", []),
+            coverage_summary=firestore_data.get("coverage_summary"),
+            status=firestore_data.get("status", "Active")
         )
     
     except Exception as e:
@@ -576,7 +588,7 @@ def convert_firestore_to_hierarchy(firestore_data: dict) -> ProjectHierarchy:
 async def get_firestore_projects():
     """Get all projects from Firestore."""
     try:
-        projects = await firestore_service.get_all_projects()
+        projects = firestore_service.get_all_projects()
         return projects
     except Exception as e:
         if DEBUG:
