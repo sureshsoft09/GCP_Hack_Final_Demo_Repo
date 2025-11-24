@@ -271,6 +271,13 @@ OUTPUT FORMATS (NORMALIZED)
 "status": "mcp_push_complete",
 "next_action": "present_summary",
 "test_generation_status": {
+"status": "completed",  // or "generation_completed"
+"epics_created": 5,
+"features_created": 12,
+"use_cases_created": 25,
+"test_cases_created": 150,
+"approved_items": 120,
+"clarifications_needed": 30,
 "stored_in_firestore": true,
 "pushed_to_jira": true
 }
