@@ -67,6 +67,9 @@ const api = {
   // Enhancement APIs
   enhanceTestCases: (data) => apiInstance.post('/enhance_test_cases', data),
   enhanceTestCasesChat: (data) => apiInstance.post('/enhance_test_cases_chat', data),
+  applyEnhancement: (data) => apiInstance.post('/enhance_test_cases_chat', {
+    prompt: data.prompt
+  }),
   
   // Migration APIs
   migrateTestCases: (formData) => apiInstance.post('/migrate_test_cases', formData, {

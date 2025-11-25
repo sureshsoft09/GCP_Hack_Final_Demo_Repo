@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -72,12 +72,29 @@ const EnhanceTestCase = () => {
   const [explanationDialogOpen, setExplanationDialogOpen] = useState(false);
   const [currentExplanation, setCurrentExplanation] = useState(null);
   
+  // Chat scroll reference
+  const chatHistoryRef = useRef(null);
+  
+  // Success popup state
+  const [successPopupOpen, setSuccessPopupOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  // Info section toggle
+  const [showInfoSection, setShowInfoSection] = useState(false);
+  
   const { showNotification } = useNotification();
 
   // Load projects on component mount
   useEffect(() => {
     loadProjects();
   }, []);
+
+  // Auto-scroll chat to bottom when new messages are added
+  useEffect(() => {
+    if (chatHistoryRef.current) {
+      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+    }
+  }, [chatHistory, sendingMessage]);
 
   const loadProjects = async () => {
     try {
@@ -182,26 +199,49 @@ Please provide enhancement suggestions or ask clarifying questions.`
     try {
       if (!currentArtifact) return;
       
-      // Get the latest AI response from chat history
-      const latestAIResponse = chatHistory.filter(msg => msg.role === 'assistant').pop();
-      if (!latestAIResponse) {
-        showNotification('No AI response to apply', 'warning');
-        return;
-      }
-
-      // Apply the enhancement (you can customize this based on your needs)
-      showNotification('Enhancement applied successfully!', 'success');
-      setCanApplyEnhancement(false);
-      setAiDialogOpen(false);
+      setSendingMessage(true);
+      setAgentStatus('Applying enhancement and pushing to Jira and Firestore...');
       
-      // Optionally refresh the project hierarchy to show updates
-      if (selectedProject) {
-        await loadProjectHierarchy();
+      // Prepare the request data with project keys
+      const requestData = {
+        project_id: selectedProject,
+        jira_project_key: projectHierarchy?.jira_project_key || 'DEFAULT',
+        firestore_project_id: selectedProject,
+        prompt: `The generated enhanced test case looks fine, push the enhanced test case to Jira project key: ${projectHierarchy?.jira_project_key || 'DEFAULT'} and Firestore project ID: ${selectedProject} through MCP tool by master_agent. Include Preconditions, Test Steps, Expected Result into jira issue description`
+      };
+
+      // Call the new applyEnhancement API
+      const response = await api.applyEnhancement(requestData);
+      
+      // Handle response that comes as response.data.response with JSON wrapped in markdown
+      let responseData = response.data.response || response.data;
+      if (typeof responseData === 'string' && responseData.includes('```json')) {
+        // Extract JSON from markdown code block
+        const jsonMatch = responseData.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch) {
+          responseData = JSON.parse(jsonMatch[1]);
+        }
+      }
+      
+      if (responseData.status === 'enhancement_update_completed') {
+        // Show success popup
+        setSuccessMessage(responseData.action_summary || 'Enhanced artifact successfully updated in database and Jira.');
+        setSuccessPopupOpen(true);
+        setCanApplyEnhancement(false);
+        setAiDialogOpen(false);
+        
+        // Note: We don't refresh here as it's handled in the success popup dialog
+        return; // Exit successfully without triggering catch block
+      } else {
+        showNotification(responseData.message || 'Failed to apply enhancement', 'error');
       }
       
     } catch (error) {
       console.error('Error applying enhancement:', error);
       showNotification('Failed to apply enhancement', 'error');
+    } finally {
+      setSendingMessage(false);
+      setAgentStatus(null);
     }
   };
 
@@ -961,9 +1001,10 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
       {/* AI Assistant Dialog */}
       <Dialog
         open={aiDialogOpen}
-        onClose={() => setAiDialogOpen(false)}
+        onClose={() => {}}
         maxWidth="lg"
         fullWidth
+        disableEscapeKeyDown
         sx={{
           '& .MuiDialog-paper': {
             height: '80vh',
@@ -1001,7 +1042,10 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
           p: 3
         }}>
           {/* Chat History */}
-          <Box sx={{ flexGrow: 1, overflow: 'auto', mb: 2, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+          <Box 
+            ref={chatHistoryRef}
+            sx={{ flexGrow: 1, overflow: 'auto', mb: 2, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}
+          >
             {chatHistory.map((message, index) => (
               <Box
                 key={index}
@@ -1029,17 +1073,7 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
             )}
           </Box>
 
-          {/* Agent Status */}
-          {agentStatus && (
-            <Box sx={{ mb: 2, p: 2, backgroundColor: '#f0f8ff', borderRadius: 1, border: '1px solid #1976d2' }}>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#1976d2' }}>
-                Status: {agentStatus.status}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {agentStatus.action_summary}
-              </Typography>
-            </Box>
-          )}
+
 
           {/* Message Input */}
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -1069,19 +1103,173 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
               <IconButton
                 color="success"
                 onClick={applyEnhancement}
-                disabled={!canApplyEnhancement}
+                disabled={!canApplyEnhancement || sendingMessage}
                 title="Apply Enhancement"
                 sx={{ 
-                  backgroundColor: canApplyEnhancement ? '#e8f5e8' : 'transparent',
+                  backgroundColor: canApplyEnhancement ? '#4caf50' : 'transparent',
+                  color: canApplyEnhancement ? 'white' : 'inherit',
+                  border: canApplyEnhancement ? '2px solid #4caf50' : '1px solid #ccc',
+                  animation: canApplyEnhancement ? 'pulse 2s infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%': {
+                      boxShadow: '0 0 0 0 rgba(76, 175, 80, 0.7)'
+                    },
+                    '70%': {
+                      boxShadow: '0 0 0 10px rgba(76, 175, 80, 0)'
+                    },
+                    '100%': {
+                      boxShadow: '0 0 0 0 rgba(76, 175, 80, 0)'
+                    }
+                  },
                   '&:hover': {
-                    backgroundColor: canApplyEnhancement ? '#d4edda' : 'transparent'
+                    backgroundColor: canApplyEnhancement ? '#45a049' : 'transparent',
+                    transform: canApplyEnhancement ? 'scale(1.1)' : 'none'
+                  },
+                  '&:disabled': {
+                    backgroundColor: 'transparent',
+                    color: '#ccc'
                   }
                 }}
               >
-                <Check />
+                {sendingMessage ? <CircularProgress size={20} color="inherit" /> : <Check />}
               </IconButton>
             </Box>
           </Box>
+          
+          {/* Info Button and Collapsible Section */}
+          <Box sx={{ mt: 2 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={() => setShowInfoSection(!showInfoSection)}
+              startIcon={showInfoSection ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              sx={{ 
+                textTransform: 'none',
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#5a67d8',
+                  backgroundColor: 'rgba(102, 126, 234, 0.04)'
+                }
+              }}
+            >
+              How to use AI Enhancement Assistant
+            </Button>
+            
+            <Collapse in={showInfoSection}>
+              <Box sx={{ 
+                mt: 2, 
+                p: 3, 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: 1, 
+                border: '1px solid #e9ecef',
+                borderLeft: '4px solid #667eea'
+              }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: '#667eea' }}>
+                  🤖 AI Enhancement Assistant Guide
+                </Typography>
+                
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#333' }}>
+                  💬 Step 1: Interactive Enhancement Chat
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: 2 }}>
+                  • Start a conversation with the AI about your test case<br/>
+                  • Ask for specific improvements like edge cases, boundary conditions, or error scenarios<br/>
+                  • Request additional test steps, validation points, or preconditions<br/>
+                  • Discuss performance, security, or usability aspects<br/>
+                  • Get suggestions for better test data or more comprehensive coverage
+                </Typography>
+                
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#333' }}>
+                  🔍 Step 2: Review AI Suggestions
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: 2 }}>
+                  • The AI will provide detailed enhancement suggestions<br/>
+                  • Review the proposed changes to preconditions, test steps, and expected results<br/>
+                  • Continue chatting to refine or request additional improvements<br/>
+                  • Ask for clarifications on any suggested enhancements
+                </Typography>
+                
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#333' }}>
+                  ✅ Step 3: Apply Enhancements
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: 2 }}>
+                  • Once satisfied with the AI's suggestions, click the <strong style={{color: '#4caf50'}}>Apply Enhancement</strong> button<br/>
+                  • The enhanced test case will be automatically updated in the database and Jira<br/>
+                  • All improvements including preconditions, test steps, and expected results will be saved<br/>
+                  • You'll receive a confirmation popup upon successful completion
+                </Typography>
+                
+                <Box sx={{ 
+                  mt: 3, 
+                  p: 2, 
+                  backgroundColor: '#e3f2fd', 
+                  borderRadius: 1,
+                  border: '1px solid #90caf9'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1, color: '#1976d2' }}>
+                    💡 Pro Tips:
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    • Be specific about what you want to improve (e.g., "Add negative test cases for invalid inputs")<br/>
+                    • Ask for industry best practices or compliance requirements<br/>
+                    • Request accessibility or cross-browser testing scenarios<br/>
+                    • Get suggestions for automation-friendly test steps
+                  </Typography>
+                </Box>
+              </Box>
+            </Collapse>
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Popup Dialog */}
+      <Dialog
+        open={successPopupOpen}
+
+        onClose={() => {}}
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: '#4caf50',
+          color: 'white',
+          textAlign: 'center',
+          py: 3
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Check sx={{ mr: 1, fontSize: '2rem' }} />
+            Enhancement Applied Successfully!
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="body1" sx={{ mb: 3 }}>
+            Enhanced artifact successfully updated in Jira and database.
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setSuccessPopupOpen(false);
+              // Save current scroll position and refresh
+              const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+              if (selectedProject) {
+                analyzeTestCases().then(() => {
+                  setTimeout(() => {
+                    window.scrollTo(0, currentScrollTop);
+                  }, 100);
+                });
+              }
+            }}
+            sx={{
+              backgroundColor: '#4caf50',
+              '&:hover': { backgroundColor: '#45a049' },
+              px: 4,
+              py: 1
+            }}
+          >
+            Continue
+          </Button>
         </DialogContent>
       </Dialog>
 

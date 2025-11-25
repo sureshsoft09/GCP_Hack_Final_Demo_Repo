@@ -573,6 +573,128 @@ async def get_feature_use_cases(project_id: str, epic_id: str, feature_id: str) 
         }
 
 @mcp.tool()
+async def update_use_case(
+    project_id: str,
+    epic_id: str,
+    feature_id: str,
+    use_case_id: str,
+    use_case_title: Optional[str] = None,
+    description: Optional[str] = None,
+    acceptance_criteria: Optional[List[str]] = None,
+    test_scenarios_outline: Optional[List[str]] = None,
+    model_explanation: Optional[str] = None,
+    review_status: Optional[str] = None,
+    comments: Optional[str] = None,
+    compliance_mapping: Optional[List[str]] = None,
+    jira_issue_id: Optional[str] = None,
+    jira_issue_key: Optional[str] = None,
+    jira_issue_url: Optional[str] = None,
+    priority: Optional[str] = None,
+    jira_status: Optional[str] = None
+) -> Dict[str, Any]:
+    """Update an existing use case with new data."""
+    try:
+        # Build update data - only include fields that are provided
+        update_data = {}
+        
+        if use_case_title is not None:
+            update_data["use_case_title"] = use_case_title
+        if description is not None:
+            update_data["description"] = description
+        if acceptance_criteria is not None:
+            update_data["acceptance_criteria"] = acceptance_criteria
+        if test_scenarios_outline is not None:
+            update_data["test_scenarios_outline"] = test_scenarios_outline
+        if model_explanation is not None:
+            update_data["model_explanation"] = model_explanation
+        if review_status is not None:
+            update_data["review_status"] = review_status
+        if comments is not None:
+            update_data["comments"] = comments
+        if compliance_mapping is not None:
+            update_data["compliance_mapping"] = compliance_mapping
+        if jira_issue_id is not None:
+            update_data["jira_issue_id"] = jira_issue_id
+        if jira_issue_key is not None:
+            update_data["jira_issue_key"] = jira_issue_key
+        if jira_issue_url is not None:
+            update_data["jira_issue_url"] = jira_issue_url
+        if priority is not None:
+            update_data["priority"] = priority
+        if jira_status is not None:
+            update_data["jira_status"] = jira_status
+        
+        # Always update the timestamp
+        update_data["updated_at"] = firestore_client.get_current_timestamp()
+        
+        # Check if use case exists first
+        use_cases = firestore_client.get_feature_use_cases(project_id, epic_id, feature_id)
+        target_use_case = None
+        for uc in use_cases:
+            if uc.get('id') == use_case_id or uc.get('use_case_id') == use_case_id:
+                target_use_case = uc
+                break
+        
+        if not target_use_case:
+            return {
+                "success": False,
+                "error": f"Use case {use_case_id} not found in feature {feature_id}"
+            }
+        
+        # Update the use case using direct Firestore operations
+        doc_ref = firestore_client.client.collection(firestore_client.projects_collection).document(project_id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            return {
+                "success": False,
+                "error": f"Project {project_id} not found"
+            }
+        
+        project_data = doc.to_dict()
+        updated = False
+        
+        # Navigate to the use case and update it
+        if 'epics' in project_data:
+            for epic in project_data['epics']:
+                if epic.get('epic_id') == epic_id or epic.get('id') == epic_id:
+                    if 'features' in epic:
+                        for feature in epic['features']:
+                            if feature.get('feature_id') == feature_id or feature.get('id') == feature_id:
+                                if 'use_cases' in feature:
+                                    for i, use_case in enumerate(feature['use_cases']):
+                                        if use_case.get('use_case_id') == use_case_id or use_case.get('id') == use_case_id:
+                                            # Update the use case with new data
+                                            feature['use_cases'][i].update(update_data)
+                                            updated = True
+                                            break
+                                if updated:
+                                    break
+                    if updated:
+                        break
+        
+        if updated:
+            # Save the updated project data back to Firestore
+            doc_ref.set(project_data)
+            return {
+                "success": True,
+                "message": f"Use case {use_case_id} updated successfully",
+                "updated_fields": list(update_data.keys()),
+                "use_case_id": use_case_id
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Use case {use_case_id} not found"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@mcp.tool()
 async def add_test_case_to_use_case(
     project_id: str,
     epic_id: str,
@@ -629,6 +751,127 @@ async def add_test_case_to_use_case(
                 "comments": comments
             }
         }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@mcp.tool()
+async def update_test_case(
+    project_id: str,
+    epic_id: str,
+    feature_id: str,
+    use_case_id: str,
+    test_case_id: str,
+    test_case_title: Optional[str] = None,
+    test_steps: Optional[List[str]] = None,
+    expected_result: Optional[str] = None,
+    test_type: Optional[str] = None,
+    preconditions: Optional[List[str]] = None,
+    compliance_mapping: Optional[List[str]] = None,
+    model_explanation: Optional[str] = None,
+    review_status: Optional[str] = None,
+    comments: Optional[str] = None,
+    jira_issue_id: Optional[str] = None,
+    jira_issue_key: Optional[str] = None,
+    jira_issue_url: Optional[str] = None,
+    priority: Optional[str] = None,
+    jira_status: Optional[str] = None
+) -> Dict[str, Any]:
+    """Update an existing test case with new data."""
+    try:
+        # Build update data - only include fields that are provided
+        update_data = {}
+        
+        if test_case_title is not None:
+            update_data["test_case_title"] = test_case_title
+        if test_steps is not None:
+            update_data["test_steps"] = test_steps
+        if expected_result is not None:
+            update_data["expected_result"] = expected_result
+        if test_type is not None:
+            update_data["test_type"] = test_type
+        if preconditions is not None:
+            update_data["preconditions"] = preconditions
+        if compliance_mapping is not None:
+            update_data["compliance_mapping"] = compliance_mapping
+        if model_explanation is not None:
+            update_data["model_explanation"] = model_explanation
+        if review_status is not None:
+            update_data["review_status"] = review_status
+        if comments is not None:
+            update_data["comments"] = comments
+        if jira_issue_id is not None:
+            update_data["jira_issue_id"] = jira_issue_id
+        if jira_issue_key is not None:
+            update_data["jira_issue_key"] = jira_issue_key
+        if jira_issue_url is not None:
+            update_data["jira_issue_url"] = jira_issue_url
+        if priority is not None:
+            update_data["priority"] = priority
+        if jira_status is not None:
+            update_data["jira_status"] = jira_status
+        
+        # Always update the timestamp
+        update_data["updated_at"] = firestore_client.get_current_timestamp()
+        
+        # Update the test case using direct Firestore operations
+        doc_ref = firestore_client.client.collection(firestore_client.projects_collection).document(project_id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            return {
+                "success": False,
+                "error": f"Project {project_id} not found"
+            }
+        
+        project_data = doc.to_dict()
+        updated = False
+        
+        # Navigate to the test case and update it
+        if 'epics' in project_data:
+            for epic in project_data['epics']:
+                if epic.get('epic_id') == epic_id or epic.get('id') == epic_id:
+                    if 'features' in epic:
+                        for feature in epic['features']:
+                            if feature.get('feature_id') == feature_id or feature.get('id') == feature_id:
+                                if 'use_cases' in feature:
+                                    for use_case in feature['use_cases']:
+                                        if use_case.get('use_case_id') == use_case_id or use_case.get('id') == use_case_id:
+                                            if 'test_cases' in use_case:
+                                                for i, test_case in enumerate(use_case['test_cases']):
+                                                    if (test_case.get('test_case_id') == test_case_id or 
+                                                        test_case.get('id') == test_case_id or
+                                                        test_case.get('custom_test_case_id') == test_case_id):
+                                                        # Update the test case with new data
+                                                        use_case['test_cases'][i].update(update_data)
+                                                        updated = True
+                                                        break
+                                            if updated:
+                                                break
+                                        if updated:
+                                            break
+                                if updated:
+                                    break
+                    if updated:
+                        break
+        
+        if updated:
+            # Save the updated project data back to Firestore
+            doc_ref.set(project_data)
+            return {
+                "success": True,
+                "message": f"Test case {test_case_id} updated successfully",
+                "updated_fields": list(update_data.keys()),
+                "test_case_id": test_case_id
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Test case {test_case_id} not found"
+            }
+            
     except Exception as e:
         return {
             "success": False,

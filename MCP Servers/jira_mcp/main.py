@@ -114,6 +114,53 @@ async def batch_create_issues(jira_issues: List[Dict[str, Any]], project_key: st
     return {"created": created, "failed": failed}
 
 @mcp.tool()
+async def update_jira_issue(
+    issue_key: str,
+    summary: str = None,
+    description: str = None,
+    project_key: str = None
+) -> Dict[str, Any]:
+    """Update a JIRA issue using the issue key.
+    
+    Args:
+        issue_key: The JIRA issue key (e.g., 'PROJ-123')
+        summary: New summary/title for the issue
+        description: New description for the issue
+        project_key: The JIRA project key to move the issue to (optional)
+    """
+    try:
+        # Get the issue first to ensure it exists
+        issue = auth_jira.issue(issue_key)
+        
+        # Build update fields
+        update_fields = {}
+        
+        if summary is not None:
+            update_fields["summary"] = summary
+            
+        if description is not None:
+            update_fields["description"] = description
+            
+        if project_key is not None:
+            update_fields["project"] = {"key": project_key}
+        
+        # Update the issue fields if any provided
+        if update_fields:
+            issue.update(fields=update_fields)
+        
+        return {
+            "success": True,
+            "message": f"Issue {issue_key} updated successfully",
+            "updated_fields": list(update_fields.keys())
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to update issue {issue_key}: {str(e)}"
+        }
+
+@mcp.tool()
 async def search_issues(jql: str) -> dict[str, Any] | str:
     """Search JIRA issues using JQL."""
     url = f"{JIRA_BASE_URL}/rest/api/3/search"
