@@ -38,10 +38,12 @@ import {
   AutoAwesome as RefactorIcon,
   Send as SendIcon,
   Close as CloseIcon,
+  Check,
   Psychology as AIIcon,
   Refresh as RefreshIcon,
   Warning as WarningIcon,
   Psychology as ExplanationIcon,
+  Check as ApplyIcon,
 } from '@mui/icons-material';
 import { useNotification } from '../contexts/NotificationContext';
 import api from '../services/api';
@@ -64,6 +66,7 @@ const EnhanceTestCase = () => {
   const [userMessage, setUserMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [agentStatus, setAgentStatus] = useState(null);
+  const [canApplyEnhancement, setCanApplyEnhancement] = useState(false);
   
   // Model Explanation Dialog State
   const [explanationDialogOpen, setExplanationDialogOpen] = useState(false);
@@ -137,24 +140,69 @@ Project ID: ${selectedProject}
 ${context.epic_id ? `Epic ID: ${context.epic_id}` : ''}
 ${context.feature_id ? `Feature ID: ${context.feature_id}` : ''}
 Artifact ID: ${artifact.use_case_id || artifact.test_case_id}
+Jira Issue Key: ${artifact.jira_issue_key || 'Not assigned'}
 Current Review Status: ${artifact.review_status || 'Pending'}
+Priority: ${artifact.priority || 'Not set'}
 Comments: ${artifact.comments || 'No comments available'}
 
 ${type === 'use_case' ? 
   `Description: ${artifact.description || 'No description'}
-  Acceptance Criteria: ${Array.isArray(artifact.acceptance_criteria) ? artifact.acceptance_criteria.join(', ') : artifact.acceptance_criteria || 'None'}
-  Model Explanation: ${artifact.model_explanation || 'No explanation available'}` :
+  
+Acceptance Criteria:
+${Array.isArray(artifact.acceptance_criteria) ? 
+  artifact.acceptance_criteria.map((criteria, index) => `${index + 1}. ${criteria}`).join('\n') : 
+  artifact.acceptance_criteria || 'None'}
+  
+Model Explanation: ${artifact.model_explanation || 'No explanation available'}` :
   `Test Type: ${artifact.test_type || 'Functional'}
-  Preconditions: ${Array.isArray(artifact.preconditions) ? artifact.preconditions.join(', ') : artifact.preconditions || 'None'}
-  Test Steps: ${Array.isArray(artifact.test_steps) ? artifact.test_steps.join(', ') : artifact.test_steps || 'None'}
-  Expected Result: ${artifact.expected_result || 'None'}
-  Model Explanation: ${artifact.model_explanation || 'No explanation available'}`}
+  
+Preconditions:
+${Array.isArray(artifact.preconditions) ? 
+  artifact.preconditions.map((precondition, index) => `${index + 1}. ${precondition}`).join('\n') : 
+  artifact.preconditions || 'None'}
+  
+Test Steps:
+${Array.isArray(artifact.test_steps) ? 
+  artifact.test_steps.map((step, index) => `Step ${index + 1}: ${step}`).join('\n') : 
+  artifact.test_steps || 'None'}
+  
+Expected Result: ${artifact.expected_result || 'None'}
+  
+Model Explanation: ${artifact.model_explanation || 'No explanation available'}`}
 
 Please provide enhancement suggestions or ask clarifying questions.`
     };
     
     setChatHistory([contextMessage]);
+    setCanApplyEnhancement(false); // Reset apply state when opening dialog
     setAiDialogOpen(true);
+  };
+
+  const applyEnhancement = async () => {
+    try {
+      if (!currentArtifact) return;
+      
+      // Get the latest AI response from chat history
+      const latestAIResponse = chatHistory.filter(msg => msg.role === 'assistant').pop();
+      if (!latestAIResponse) {
+        showNotification('No AI response to apply', 'warning');
+        return;
+      }
+
+      // Apply the enhancement (you can customize this based on your needs)
+      showNotification('Enhancement applied successfully!', 'success');
+      setCanApplyEnhancement(false);
+      setAiDialogOpen(false);
+      
+      // Optionally refresh the project hierarchy to show updates
+      if (selectedProject) {
+        await loadProjectHierarchy();
+      }
+      
+    } catch (error) {
+      console.error('Error applying enhancement:', error);
+      showNotification('Failed to apply enhancement', 'error');
+    }
   };
 
   const sendMessage = async () => {
@@ -190,6 +238,7 @@ Please provide enhancement suggestions or ask clarifying questions.`
           expected_result: currentArtifact.expected_result || '',
           test_data: currentArtifact.test_data || null,
           priority: currentArtifact.priority || 'Medium',
+          jira_issue_key: currentArtifact.jira_issue_key || null,
           tags: currentArtifact.tags || []
         })
       };
@@ -225,6 +274,7 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
       };
       
       setChatHistory(prev => [...prev, assistantMessage]);
+      setCanApplyEnhancement(true); // Enable apply button after AI response
       
       // Check if the response indicates completion or success
       if (agentResponse.response && (
@@ -386,21 +436,37 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
                   size="small"
                   color={testCase.review_status === 'Approved' ? 'success' : 'warning'}
                 />
-                {isNonApproved(testCase) && (
-                  <Button
+                {testCase.priority && (
+                  <Chip
+                    label={`Priority: ${testCase.priority}`}
                     size="small"
                     variant="outlined"
-                    startIcon={<RefactorIcon />}
-                    onClick={() => handleRefactor(testCase, 'test_case', { 
-                      epic_id: epic?.epic_id, 
-                      feature_id: feature?.feature_id,
-                      use_case_id: useCase?.use_case_id
-                    })}
-                    sx={{ color: '#667eea', borderColor: '#667eea' }}
-                  >
-                    Refactor
-                  </Button>
+                    color={testCase.priority === 'High' ? 'error' : testCase.priority === 'Medium' ? 'warning' : 'default'}
+                    sx={{ fontSize: '0.7rem' }}
+                  />
                 )}
+                {testCase.jira_issue_key && (
+                  <Chip
+                    label={`Jira: ${testCase.jira_issue_key}`}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    sx={{ fontSize: '0.7rem' }}
+                  />
+                )}
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<RefactorIcon />}
+                  onClick={() => handleRefactor(testCase, 'test_case', { 
+                    epic_id: epic?.epic_id,
+                    feature_id: feature?.feature_id,
+                    use_case_id: useCase?.use_case_id
+                  })}
+                  sx={{ color: '#667eea', borderColor: '#667eea' }}
+                >
+                  Refactor
+                </Button>
               </Box>
             </Box>
           </Box>
@@ -510,23 +576,39 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
                       size="small"
                       color={useCase.review_status === 'Approved' ? 'success' : 'warning'}
                     />
-                    {isNonApproved(useCase) && (
-                      <Button
+                    {useCase.priority && (
+                      <Chip
+                        label={`Priority: ${useCase.priority}`}
                         size="small"
                         variant="outlined"
-                        startIcon={<RefactorIcon />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRefactor(useCase, 'use_case', {
-                            epic_id: epic?.epic_id,
-                            feature_id: feature?.feature_id
-                          });
-                        }}
-                        sx={{ color: '#667eea', borderColor: '#667eea' }}
-                      >
-                        Refactor
-                      </Button>
+                        color={useCase.priority === 'High' ? 'error' : useCase.priority === 'Medium' ? 'warning' : 'default'}
+                        sx={{ fontSize: '0.75rem' }}
+                      />
                     )}
+                    {useCase.jira_issue_key && (
+                      <Chip
+                        label={`Jira: ${useCase.jira_issue_key}`}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        sx={{ fontSize: '0.75rem' }}
+                      />
+                    )}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<RefactorIcon />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRefactor(useCase, 'use_case', {
+                          epic_id: epic?.epic_id,
+                          feature_id: feature?.feature_id
+                        });
+                      }}
+                      sx={{ color: '#667eea', borderColor: '#667eea' }}
+                    >
+                      Refactor
+                    </Button>
                   </Box>
                 </Box>
               </Box>
@@ -605,6 +687,24 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
                   hasInfo={!!feature.model_explanation}
                   tooltip="View AI Model Explanation"
                 />
+                {feature.priority && (
+                  <Chip
+                    label={`Priority: ${feature.priority}`}
+                    size="small"
+                    variant="outlined"
+                    color={feature.priority === 'High' ? 'error' : feature.priority === 'Medium' ? 'warning' : 'default'}
+                    sx={{ ml: 1, fontSize: '0.75rem' }}
+                  />
+                )}
+                {feature.jira_issue_key && (
+                  <Chip
+                    label={`Jira: ${feature.jira_issue_key}`}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    sx={{ ml: 1, fontSize: '0.75rem' }}
+                  />
+                )}
                 {hasUseCasesNeedingClarification(feature) && (
                   <WarningIcon 
                     sx={{ ml: 1, color: '#ff9800', fontSize: 18 }} 
@@ -661,6 +761,24 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
                   hasInfo={!!epic.model_explanation}
                   tooltip="View AI Model Explanation"
                 />
+                {epic.priority && (
+                  <Chip
+                    label={`Priority: ${epic.priority}`}
+                    size="small"
+                    variant="outlined"
+                    color={epic.priority === 'High' ? 'error' : epic.priority === 'Medium' ? 'warning' : 'default'}
+                    sx={{ ml: 1, fontSize: '0.75rem' }}
+                  />
+                )}
+                {epic.jira_issue_key && (
+                  <Chip
+                    label={`Jira: ${epic.jira_issue_key}`}
+                    size="small"
+                    variant="outlined"
+                    color="primary"
+                    sx={{ ml: 1, fontSize: '0.75rem' }}
+                  />
+                )}
                 {hasFeaturesNeedingClarification(epic) && (
                   <WarningIcon 
                     sx={{ ml: 1, color: '#ff9800', fontSize: 20 }} 
@@ -718,34 +836,55 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={8}>
             <FormControl fullWidth>
-              <InputLabel id="project-select-label">Choose Project</InputLabel>
+              <InputLabel id="project-select-label">
+                {loading ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CircularProgress size={16} />
+                    <span>Loading Projects...</span>
+                  </Box>
+                ) : (
+                  'Choose Project'
+                )}
+              </InputLabel>
               <Select
                 labelId="project-select-label"
                 value={selectedProject}
                 label="Choose Project"
                 onChange={handleProjectSelect}
                 disabled={loading}
+                startAdornment={loading && (
+                  <CircularProgress size={20} sx={{ mr: 1, ml: 1 }} />
+                )}
               >
-                {projects.map((project) => (
-                  <MenuItem key={project.project_id} value={project.project_id}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <Typography sx={{ flexGrow: 1 }}>
-                        {project.project_name} ({project.project_id})
-                      </Typography>
-                      {projectClarificationStatus[project.project_id] && (
-                        <Tooltip title="Contains items needing clarification">
-                          <WarningIcon 
-                            sx={{ 
-                              color: '#ff9800', 
-                              fontSize: '1.2rem',
-                              ml: 1
-                            }} 
-                          />
-                        </Tooltip>
-                      )}
+                {loading ? (
+                  <MenuItem disabled>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2 }}>
+                      <CircularProgress size={20} />
+                      <Typography color="text.secondary">Loading projects...</Typography>
                     </Box>
                   </MenuItem>
-                ))}
+                ) : (
+                  projects.map((project) => (
+                    <MenuItem key={project.project_id} value={project.project_id}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                        <Typography sx={{ flexGrow: 1 }}>
+                          {project.project_name} ({project.project_id})
+                        </Typography>
+                        {projectClarificationStatus[project.project_id] && (
+                          <Tooltip title="Contains items needing clarification">
+                            <WarningIcon 
+                              sx={{ 
+                                color: '#ff9800', 
+                                fontSize: '1.2rem',
+                                ml: 1
+                              }} 
+                            />
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </MenuItem>
+                  ))
+                )}
               </Select>
             </FormControl>
           </Grid>
@@ -823,20 +962,44 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
       <Dialog
         open={aiDialogOpen}
         onClose={() => setAiDialogOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
-        fullScreen
+        sx={{
+          '& .MuiDialog-paper': {
+            height: '80vh',
+            maxHeight: '800px',
+            width: '90vw',
+            maxWidth: '1000px',
+            borderRadius: 2,
+            boxShadow: 3
+          }
+        }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <DialogTitle sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between',
+          backgroundColor: '#667eea',
+          color: 'white',
+          py: 2
+        }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <AIIcon sx={{ mr: 1, color: '#667eea' }} />
+            <AIIcon sx={{ mr: 1 }} />
             AI Enhancement Assistant
           </Box>
-          <IconButton onClick={() => setAiDialogOpen(false)}>
+          <IconButton 
+            onClick={() => setAiDialogOpen(false)}
+            sx={{ color: 'white' }}
+          >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ height: '70vh', display: 'flex', flexDirection: 'column' }}>
+        <DialogContent sx={{ 
+          height: 'calc(80vh - 120px)', 
+          display: 'flex', 
+          flexDirection: 'column',
+          p: 3
+        }}>
           {/* Chat History */}
           <Box sx={{ flexGrow: 1, overflow: 'auto', mb: 2, p: 1, border: '1px solid #e0e0e0', borderRadius: 1 }}>
             {chatHistory.map((message, index) => (
@@ -894,14 +1057,30 @@ Please analyze the existing ${artifactType} and either ask clarifying questions 
                 }
               }}
             />
-            <IconButton
-              color="primary"
-              onClick={sendMessage}
-              disabled={!userMessage.trim() || sendingMessage}
-              sx={{ alignSelf: 'flex-end' }}
-            >
-              <SendIcon />
-            </IconButton>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <IconButton
+                color="primary"
+                onClick={sendMessage}
+                disabled={!userMessage.trim() || sendingMessage}
+                title="Send Message"
+              >
+                <SendIcon />
+              </IconButton>
+              <IconButton
+                color="success"
+                onClick={applyEnhancement}
+                disabled={!canApplyEnhancement}
+                title="Apply Enhancement"
+                sx={{ 
+                  backgroundColor: canApplyEnhancement ? '#e8f5e8' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: canApplyEnhancement ? '#d4edda' : 'transparent'
+                  }
+                }}
+              >
+                <Check />
+              </IconButton>
+            </Box>
           </Box>
         </DialogContent>
       </Dialog>

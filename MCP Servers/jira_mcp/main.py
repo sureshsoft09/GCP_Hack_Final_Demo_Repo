@@ -100,7 +100,9 @@ async def batch_create_issues(jira_issues: List[Dict[str, Any]], project_key: st
 
             created.append({
                 "index": idx,
-                "jira_issue_id": result.id
+                "jira_issue_id": result.id,
+                "jira_issue_key": result.key,
+                "jira_issue_url": result.permalink()
             })
         except Exception as e:
             failed.append({

@@ -203,10 +203,7 @@ Before output, the agent must verify:
 
 ---
 
-
-## Output Format
-
-The final output must be structured as:
+Enahanced artifact format
 
 {
   "project_name": "testpro12",
@@ -227,6 +224,7 @@ The final output must be structured as:
               "use_case_id": "",
               "title": "",
               "description": "",
+              "acceptance_criteria":[],
               "test_scenarios_outline": [],
               "model_explanation": "",
               "compliance_mapping": [],

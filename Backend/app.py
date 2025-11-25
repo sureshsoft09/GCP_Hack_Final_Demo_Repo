@@ -296,8 +296,8 @@ async def generate_test_cases(req: PromptRequest):
             One issue entry per epic/feature/use case/test case.
             Include external_ref (e.g., epic_id, feature_id) for mapping.
 
-        3. Call Jira MCP once and get a list of created issues with jira_issue_id values.
-        4. Map Jira IDs into the artifacts, setting jira_status = "pushed".
+        3. Call Jira MCP tool batch_create_issues once and get a list of created issues with jira_issue_id, key and url values.
+        4. Map Jira IDs, key and url values into the artifacts, setting jira_status = "pushed".
         5. Construct one Firestore MCP call:
 
             {
@@ -306,7 +306,7 @@ async def generate_test_cases(req: PromptRequest):
             "epics": [ ... full hierarchy with mapped jira_issue_id ... ]
             }
 
-        6. Call Firestore MCP once with only that JSON.
+        6. Call Firestore MCP tool bulk_write_epics_structure once with only that JSON.
         7. Return a JSON summary of results
 
     Validation
@@ -341,7 +341,8 @@ async def enhance_test_cases_chat(req: PromptRequest):
         
         Context:
         - Type: Enhance Clarification Interaction
-        - Intent: Provide clarification, or confirm requirements as complete to change/ enhance existing test case/ use case and store it into Firestore and Jira.
+        - Intent: Provide clarification, or confirm requirements as complete to change/ enhance existing test case/ use case.
+        - Return with the calrification or changed/ enhanced use case/ test case in user friendly format not in JSON format.
         - User message: {req.prompt}    
         """
     response = await call_agents_api(prompt)

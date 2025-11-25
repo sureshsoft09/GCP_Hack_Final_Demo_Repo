@@ -203,6 +203,8 @@ async def bulk_write_epics_structure(
                    "description": str,
                    "priority": str,
                    "jira_issue_id": str|None,
+                   "jira_issue_key": str|None,
+                   "jira_issue_url": str|None,
                    "jira_status": str,
                    "features": [
                        {
@@ -211,6 +213,8 @@ async def bulk_write_epics_structure(
                            "description": str,
                            "priority": str,
                            "jira_issue_id": str|None,
+                           "jira_issue_key": str|None,
+                           "jira_issue_url": str|None,
                            "jira_status": str,
                            "use_cases": [
                                {
@@ -219,6 +223,8 @@ async def bulk_write_epics_structure(
                                    "description": str,
                                    "priority": str,
                                    "jira_issue_id": str|None,
+                                   "jira_issue_key": str|None,
+                                   "jira_issue_url": str|None,
                                    "jira_status": str,
                                    "test_scenarios_outline": List[str],
                                    "model_explanation": str,
@@ -235,6 +241,8 @@ async def bulk_write_epics_structure(
                                            "test_type": str,
                                            "priority": str,
                                            "jira_issue_id": str|None,
+                                           "jira_issue_key": str|None,
+                                           "jira_issue_url": str|None,
                                            "jira_status": str,
                                            "compliance_mapping": List[str],
                                            "model_explanation": str,
@@ -280,6 +288,8 @@ async def bulk_write_epics_structure(
                 "description": epic_data.get("description", ""),
                 "epic_id": epic_data.get("epic_id", ""),
                 "jira_issue_id": epic_data.get("jira_issue_id") or "",
+                "jira_issue_key": epic_data.get("jira_issue_key") or "",
+                "jira_issue_url": epic_data.get("jira_issue_url") or "",
                 "priority": epic_data.get("priority", "Medium"),
                 "jira_status": epic_data.get("jira_status", "Not Pushed"),
                 "created_at": firestore_client.get_current_timestamp()
@@ -300,6 +310,8 @@ async def bulk_write_epics_structure(
                     "description": feature_data.get("description", ""),
                     "feature_id": feature_data.get("feature_id", ""),
                     "jira_issue_id": feature_data.get("jira_issue_id") or "",
+                    "jira_issue_key": feature_data.get("jira_issue_key") or "",
+                    "jira_issue_url": feature_data.get("jira_issue_url") or "",
                     "priority": feature_data.get("priority", "Medium"),
                     "jira_status": feature_data.get("jira_status", "Not Pushed"),
                     "created_at": firestore_client.get_current_timestamp()
@@ -318,7 +330,7 @@ async def bulk_write_epics_structure(
                     use_case_info = {
                         "use_case_title": use_case_data["title"],
                         "description": use_case_data.get("description", ""),
-                        "acceptance_criteria": [],  # Not provided in new structure
+                        "acceptance_criteria": use_case_data.get("acceptance_criteria", []),  # Not provided in new structure
                         "test_scenarios_outline": use_case_data.get("test_scenarios_outline", []),
                         "model_explanation": use_case_data.get("model_explanation", ""),
                         "review_status": use_case_data.get("review_status", "Draft"),
@@ -326,6 +338,8 @@ async def bulk_write_epics_structure(
                         "compliance_mapping": use_case_data.get("compliance_mapping", []),
                         "use_case_id": use_case_data.get("use_case_id", ""),
                         "jira_issue_id": use_case_data.get("jira_issue_id") or "",
+                        "jira_issue_key": use_case_data.get("jira_issue_key") or "",
+                        "jira_issue_url": use_case_data.get("jira_issue_url") or "",
                         "priority": use_case_data.get("priority", "Medium"),
                         "jira_status": use_case_data.get("jira_status", "Not Pushed"),
                         "created_at": firestore_client.get_current_timestamp()
@@ -348,6 +362,8 @@ async def bulk_write_epics_structure(
                             "review_status": test_case_data.get("review_status", "Draft"),
                             "comments": test_case_data.get("comments", ""),
                             "jira_issue_id": test_case_data.get("jira_issue_id") or "",
+                            "jira_issue_key": test_case_data.get("jira_issue_key") or "",
+                            "jira_issue_url": test_case_data.get("jira_issue_url") or "",
                             "priority": test_case_data.get("priority", "Medium"),
                             "jira_status": test_case_data.get("jira_status", "Not Pushed")
                         }

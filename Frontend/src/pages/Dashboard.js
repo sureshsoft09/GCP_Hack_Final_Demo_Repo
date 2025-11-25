@@ -412,10 +412,10 @@ const Dashboard = () => {
                   hasInfo={!!testCase.model_explanation}
                   tooltip="View AI Model Explanation"
                 />
-                {testCase.jira_issue_id && (
+                {testCase.jira_issue_key && (
                   <Chip
                     icon={<JiraIcon sx={{ fontSize: '14px' }} />}
-                    label={testCase.jira_issue_id}
+                    label={testCase.jira_issue_key}
                     size="small"
                     variant="outlined"
                     color="primary"
@@ -541,10 +541,10 @@ const Dashboard = () => {
                   <Badge badgeContent={testCases.length} color="success" sx={{ ml: 1 }}>
                     <TestCaseIcon fontSize="small" />
                   </Badge>
-                  {useCase.jira_issue_id && (
+                  {useCase.jira_issue_key && (
                     <Chip
                       icon={<JiraIcon sx={{ fontSize: '16px' }} />}
-                      label={useCase.jira_issue_id}
+                      label={useCase.jira_issue_key}
                       size="small"
                       variant="outlined"
                       color="primary"
@@ -635,10 +635,10 @@ const Dashboard = () => {
                   <Badge badgeContent={useCases.length} color="info" sx={{ ml: 1 }}>
                     <UseCaseIcon fontSize="small" />
                   </Badge>
-                  {feature.jira_issue_id && (
+                  {feature.jira_issue_key && (
                     <Chip
                       icon={<JiraIcon sx={{ fontSize: '16px' }} />}
-                      label={feature.jira_issue_id}
+                      label={feature.jira_issue_key}
                       size="small"
                       variant="outlined"
                       color="primary"
@@ -729,10 +729,10 @@ const Dashboard = () => {
                   <Badge badgeContent={features.length} color="warning" sx={{ ml: 1 }}>
                     <FeatureIcon fontSize="small" />
                   </Badge>
-                  {epic.jira_issue_id && (
+                  {epic.jira_issue_key && (
                     <Chip
                       icon={<JiraIcon sx={{ fontSize: '16px' }} />}
-                      label={epic.jira_issue_id}
+                      label={epic.jira_issue_key}
                       size="small"
                       variant="outlined"
                       color="primary"

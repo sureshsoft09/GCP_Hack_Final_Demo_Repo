@@ -1301,8 +1301,8 @@ const TestCaseGeneration = () => {
 
                       {/* Chat Interface */}
                       <Grid item xs={12} md={6}>
-                        <Card sx={{ height: 500, display: 'flex', flexDirection: 'column' }}>
-                          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', pb: 1 }}>
+                        <Card sx={{ height: 520, display: 'flex', flexDirection: 'column' }}>
+                          <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', pb: 2 }}>
                             <Typography variant="h6" gutterBottom>
                               AI Assistant Chat
                               {!assistantEnabled && (
@@ -1403,18 +1403,23 @@ const TestCaseGeneration = () => {
                                 borderTop: '1px solid',
                                 borderColor: 'divider',
                                 pt: 2,
-                                backgroundColor: 'background.paper'
+                                pb: 1,
+                                backgroundColor: 'background.paper',
+                                minHeight: 'auto'
                               }}
                             >
                               <TextField
                                 fullWidth
                                 size="small"
+                                multiline
+                                minRows={3}
+                                maxRows={6}
                                 placeholder={
                                   !assistantEnabled 
                                     ? "Requirements are ready for test generation - Assistant disabled"
                                     : isProcessing 
                                       ? "Analyzing with AI assistant..."
-                                      : "Ask about requirements or test scenarios..."
+                                      : "Ask about requirements or test scenarios... (Shift+Enter for new line, Enter to send)"
                                 }
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
@@ -1428,10 +1433,14 @@ const TestCaseGeneration = () => {
                                 sx={{
                                   '& .MuiInputBase-input': {
                                     color: !assistantEnabled ? 'text.disabled' : 'text.primary',
+                                    resize: 'none', // Prevent manual resizing
                                   },
                                   '& .MuiInputBase-input::placeholder': {
                                     color: !assistantEnabled ? 'text.disabled' : 'text.secondary',
                                     opacity: 1,
+                                  },
+                                  '& .MuiInputBase-root': {
+                                    alignItems: 'flex-start', // Align text to top when multiline
                                   }
                                 }}
                               />

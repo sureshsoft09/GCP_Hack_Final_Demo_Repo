@@ -767,6 +767,8 @@ Values:
       "description": "Handles user login, authentication, and access management functionalities.",
       "priority": "Critical",
       "jira_issue_id": null,
+      "jira_issue_key": null,
+      "jira_issue_url": null,
       "jira_status": "Not Pushed",
       "features": [
         {
@@ -775,14 +777,22 @@ Values:
           "description": "Handles user login processes including credential validation and session management.",
           "priority": "High",
           "jira_issue_id": null,
+          "jira_issue_key": null,
+          "jira_issue_url": null,
           "jira_status": "Not Pushed",
           "use_cases": [
             {
               "use_case_id": "UC001",
               "title": "User logs in with valid credentials",
               "description": "System validates user credentials and provides access.",
+              "acceptance_criteria": [
+                "Given valid user credentials, when the user attempts to log in, then the system should grant access and log the event in the audit trail.",
+                "Given invalid user credentials, when the user attempts to log in, then the system should deny access and log the failed attempt in the audit trail."
+              ],
               "priority": "Medium",
               "jira_issue_id": null,
+              "jira_issue_key": null,
+              "jira_issue_url": null,
               "jira_status": "Not Pushed",
               "test_scenarios_outline": [
                 "Verify login success for valid credentials",
@@ -809,6 +819,8 @@ Values:
                   "test_type": "Functional",
                   "priority": "High",
                   "jira_issue_id": null,
+                  "jira_issue_key": null,
+                  "jira_issue_url": null,
                   "jira_status": "Not Pushed",
                   "compliance_mapping": [
                     "FDA 820.30(g)",
@@ -834,6 +846,8 @@ Values:
                   "test_type": "Negative",
                   "priority": "Low",
                   "jira_issue_id": null,
+                  "jira_issue_key": null,
+                  "jira_issue_url": null,
                   "jira_status": "Not Pushed",
                   "compliance_mapping": [
                     "FDA 820.30(g)",
@@ -856,14 +870,17 @@ Values:
       ]
     }
   ],
-  "epics_generated": "len(epics)",
-  "features_generated": "len(features)",
-  "use_cases_generated": "len(use_cases)",
-  "test_cases_generated": "len(test_cases)",
+  "epics_generated": 1,
+  "features_generated": 1,
+  "use_cases_generated": 1,
+  "test_cases_generated": 2,
   "stored_in_firestore": false,
   "pushed_to_jira": false,
-  "next_action": "push all generated test cases (epics to test cases) into FireStore and Jira through master agent.",
-  "push_targets": ["Jira", "Firestore"],
+  "next_action": "push all generated test cases (epics to test cases) into Jira and Firestore through master agent.",
+  "push_targets": [
+    "Jira",
+    "Firestore"
+  ],
   "status": "generation_completed"
 }
 
